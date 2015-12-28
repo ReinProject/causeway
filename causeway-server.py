@@ -13,16 +13,16 @@ from flask import request
 from flask import abort, url_for
 from flask.ext.sqlalchemy import SQLAlchemy
 
-from two1.lib.wallet import Wallet
-from two1.lib.bitserv.flask import Payment
+#from two1.lib.wallet import Wallet
+#from two1.lib.bitserv.flask import Payment
 
 from models import *
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + DATABASE
 db = SQLAlchemy(app)
-wallet = Wallet()
-payment = Payment(app, wallet)
+#wallet = Wallet()
+#payment = Payment(app, wallet)
 
 # start time
 start_time = time.time()
@@ -32,12 +32,17 @@ stored = 0
 @app.route('/help')
 def home():
     '''Return service, pricing and endpoint information'''
-    home_obj = [{"name": "causeway/1",       # service 'causeway', version '1'
+    home_obj = [{"name": "causeway/1.freebeer",       # service 'causeway', version '1'
                  "pricing-type": "per-mb",   # pricing is listed per 1000000 bytes
                  "pricing" : [{"rpc": "buy",
                                "per-req": 0,
                                "per-unit": PRICE,
                                "description": "1 MB hosting, 50 MB bandwidth, 1 year expiration"
+                              },
+                              {"rpc": "request",
+                               "per-req": 0,
+                               "per-unit": 0,
+                               "description": "1 MB hosting, 50 MB bandwidth, 1 year expiration - free version for testing"
                               },
                               {"rpc": "get",
                                "per-req": 0,
@@ -54,7 +59,7 @@ def home():
                                "per-mb": 0
                               }],
                   "description": "This Causeway server provides microhosting services. Download the "\
-                  "client and server at https://github.com/jgarzik/playground21/archive/master.zip"
+                  "client and server at https://github.com/weex/causeway/archive/master.zip"
                 }
                ]
 
@@ -85,16 +90,43 @@ def status():
 @app.route('/price')
 def price():
     '''Return price for 1MB storage with bundled 50MB transfer.'''
-    body = json.dumps({'price': PRICE})
+    body = json.dumps({'price': 0})
     return (body, 200, {'Content-length': len(body),
                         'Content-type': 'application/json',
                        }
            )
 
-@app.route('/buy')
-@payment.required(PRICE)
-def buy_hosting():
-    '''Registers one hosting bucket to account on paid request.'''
+#@app.route('/buy')
+#@payment.required(PRICE)
+#def buy_hosting():
+#    '''Registers one hosting bucket to account on paid request.'''
+#    # extract account address from client request
+#    owner = request.args.get('address')
+#    contact = request.args.get('contact')
+#
+#    # check if user exists
+#    o = db.session.query(Owner).get(owner)
+#    if o is None:
+#        # create them
+#        o = Owner(owner)
+#        db.session.add(o)
+#        db.session.commit()
+#
+#    # owner should now exist,  create sale record for address
+#    s = Sale(owner, contact, 1, 30, PRICE)
+#    db.session.add(s)
+#    db.session.commit()
+#
+#    body = json.dumps({'result': 'success', 
+#                       'buckets': s.get_buckets()}, indent=2)
+#    return (body, 200, {'Content-length': len(body),
+#                        'Content-type': 'application/json',
+#                       }
+#           )
+
+@app.route('/request')
+def request_hosting():
+    '''Registers one hosting bucket to account on request (free for testing).'''
     # extract account address from client request
     owner = request.args.get('address')
     contact = request.args.get('contact')
@@ -138,7 +170,7 @@ def put():
      
     # check signature
     owner = Owner.query.filter_by(address=o).first()
-    if owner.nonce not in n or wallet.verify_bitcoin_message(k + v + o + n, s, o):
+    if owner.nonce not in n or bitcoinsig.verify_message(o, s, k + v + o + n):
         body = json.dumps({'error': 'Incorrect signature.'})
         code = 401
     else:
@@ -197,7 +229,7 @@ def delete():
 
     # check signature
     owner = Owner.query.filter_by(address=o).first()
-    if owner.nonce not in n or wallet.verify_bitcoin_message(k + o + n, s, o):
+    if owner.nonce not in n or bitcoinsig.verify_message(o, s, k + o + n):
         body = json.dumps({'error': 'Incorrect signature.'})
         code = 401
     else:
@@ -280,7 +312,7 @@ def get_deposit_address():
     signature = request.args.get('signature')
 
     print(len(signature))
-    if len(signature) == 88 and wallet.verify_bitcoin_message(message, signature, address):
+    if len(signature) == 88 and bitcoinsig.verify_message(address, signature, message):
         body = json.dumps({'address': 'hereyago'})
     else:
         body = json.dumps({'error': 'Invalid signature'})
