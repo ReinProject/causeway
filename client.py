@@ -1,18 +1,28 @@
 #.!/usr/bin/env python3
 
 import sys, json, os, argparse
+import requests
 
 # import from the 21 Developer Library
-from two1.commands.config import Config
-from two1.lib.wallet import Wallet
-from two1.lib.bitrequests import BitTransferRequests
+#from two1.commands.config import Config
+#from two1.lib.wallet import Wallet
+#from two1.lib.bitrequests import BitTransferRequests
 
 # set up bitrequest client for BitTransfer requests
-wallet = Wallet()
-username = Config().username
-requests = BitTransferRequests(wallet, username)
+#wallet = Wallet()
+#username = Config().username
+#requests = BitTransferRequests(wallet, username)
 
 # server address
+def request(args):
+    primary_address = args.address
+    sel_url = "{0}request?address={1}&contact={2}"
+    answer = requests.get(url=sel_url.format(args.url, primary_address, args.contact))
+    if answer.status_code != 200:
+        print("Request failed.")
+    else:
+        print(answer.text)
+
 def buy(args):
     primary_address = wallet.get_payout_address()
     sel_url = "{0}buy?address={1}&contact={2}"
@@ -115,6 +125,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Interact with Causeway server")
     #parser.set_defaults(func=help)
     subparsers = parser.add_subparsers(help="Commands")
+
+    parser_buy = subparsers.add_parser('request', help="Request free hosting bucket")
+    parser_buy.add_argument('url', help='Url of the Causeway server with trailing slash.')  
+    parser_buy.add_argument('address', help='Address used as username for the service.')  
+    parser_buy.add_argument('contact', help='Email address to contact on expiration.')  
+    parser_buy.set_defaults(func=request)
 
     parser_buy = subparsers.add_parser('buy', help="Purchase hosting bucket")
     parser_buy.add_argument('url', help='Url of the Causeway server with trailing slash.')  
