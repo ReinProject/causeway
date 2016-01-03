@@ -16,6 +16,7 @@ from flask.ext.sqlalchemy import SQLAlchemy
 #from two1.lib.wallet import Wallet
 #from two1.lib.bitserv.flask import Payment
 
+from bitcoinecdsa import sign, verify
 from models import *
 
 app = Flask(__name__)
@@ -128,19 +129,20 @@ def price():
 def request_hosting():
     '''Registers one hosting bucket to account on request (free for testing).'''
     # extract account address from client request
-    owner = request.args.get('address')
+    owner = request.args.get('owner')
+    delegate = request.args.get('delegate')
     contact = request.args.get('contact')
 
     # check if user exists
     o = db.session.query(Owner).get(owner)
     if o is None:
         # create them
-        o = Owner(owner)
+        o = Owner(owner, delegate)
         db.session.add(o)
         db.session.commit()
 
     # owner should now exist,  create sale record for address
-    s = Sale(owner, contact, 1, 30, PRICE)
+    s = Sale(owner, contact, 1, 30, 0)
     db.session.add(s)
     db.session.commit()
 
@@ -164,13 +166,18 @@ def put():
 
     k = in_obj['key']
     v = in_obj['value']
-    o = in_obj['address']
+    o = in_obj['owner']
     n = in_obj['nonce']
     s = in_obj['signature']
-     
-    # check signature
-    owner = Owner.query.filter_by(address=o).first()
-    if owner.nonce not in n or bitcoinsig.verify_message(o, s, k + v + o + n):
+    d = in_obj['signature_address']
+
+    if o == d:
+        # this is enrollment
+        owner = Owner.query.filter_by(address=d).first()
+    else:
+        owner = Owner.query.filter_by(delegate=d).first()
+
+    if owner.nonce != n or not verify(d, k + v + d + n, s) :
         body = json.dumps({'error': 'Incorrect signature.'})
         code = 401
     else:
@@ -223,13 +230,13 @@ def delete():
         return ("JSON Decode failed", 400, {'Content-Type':'text/plain'})
 
     k = in_obj['key']
-    o = in_obj['address']
+    d = in_obj['address']
     n = in_obj['nonce']
     s = in_obj['signature']
 
     # check signature
-    owner = Owner.query.filter_by(address=o).first()
-    if owner.nonce not in n or bitcoinsig.verify_message(o, s, k + o + n):
+    owner = Owner.query.filter_by(delegate=d).first()
+    if owner.nonce not in n or verify(o, k + o + n, s):
         body = json.dumps({'error': 'Incorrect signature.'})
         code = 401
     else:
@@ -283,8 +290,13 @@ def nonce():
     if o is None:
         return abort(500)
 
+    # clear the nonce by sending it to the server
+    if request.args.get('clear') and request.args.get('clear') == o.nonce:
+        o.nonce = ''
+        db.session.commit()
+        body = json.dumps({'nonce': o.nonce})
     # if nonce is set for user return it, else make a new one
-    if o.nonce and len(o.nonce) == 32:
+    elif o.nonce and len(o.nonce) == 32:
         body = json.dumps({'nonce': o.nonce})
     # if not, create one and store it
     else:
@@ -312,7 +324,7 @@ def get_deposit_address():
     signature = request.args.get('signature')
 
     print(len(signature))
-    if len(signature) == 88 and bitcoinsig.verify_message(address, signature, message):
+    if len(signature) == 88 and verify(address, message, signature):
         body = json.dumps({'address': 'hereyago'})
     else:
         body = json.dumps({'error': 'Invalid signature'})

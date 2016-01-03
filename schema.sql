@@ -1,5 +1,6 @@
 CREATE TABLE owner (
     address varchar(64) primary key,
+    delegate varchar(64),
     nonce varchar(32),
     balance integer,
     bad_attempts integer

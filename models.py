@@ -11,12 +11,14 @@ class Owner(db.Model):
     __tablename__ = 'owner'
 
     address = db.Column(db.String(64), primary_key=True)
+    delegate = db.Column(db.String(64))
     nonce = db.Column(db.String(32), unique=True)
     balance = db.Column(db.Integer)
     bad_attempts = db.Column(db.Integer)
 
-    def __init__(self, address, nonce=None, balance=0, bad_attempts=0):
+    def __init__(self, address, delegate, nonce=None, balance=0, bad_attempts=0):
         self.address = address
+        self.delegate = delegate
         self.nonce = nonce
         self.balance = balance
         self.bad_attempts = bad_attempts
@@ -67,7 +69,7 @@ class Sale(db.Model):
         sales = Sale.query.filter_by(owner=self.owner).all()
         result = []
         for s in sales:
-            result.append({"created":str(s.created), "bytes_free": str(1024*1024 - s.bytes_used)})
+            result.append({"id": s.id, "created":str(s.created), "bytes_free": str(1024*1024 - s.bytes_used)})
         return result
 
     def __repr__(self):
