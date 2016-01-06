@@ -134,20 +134,49 @@ def request_hosting():
     contact = request.args.get('contact')
 
     # check if user exists
-    o = db.session.query(Owner).get(owner)
+    o = db.session.query(Owner).filter(Owner.address == owner).first()
+    print(o)
     if o is None:
         # create them
         o = Owner(owner, delegate)
+        print(o)
         db.session.add(o)
         db.session.commit()
 
-    # owner should now exist,  create sale record for address
-    s = Sale(owner, contact, 1, 30, 0)
-    db.session.add(s)
-    db.session.commit()
+    count = db.session.query(Sale).filter(Sale.price == 0).count()
+    if count > 4:
+        s = Sale(owner, contact, 1, 30, 0)
+        db.session.add(s)
+        db.session.commit()
+        body = json.dumps({'result': 'success', 
+                           'buckets': s.get_buckets()}, indent=2)
+    else:
+        body = json.dumps({'result': 'error',
+                           'message': 'Maximum free buckets granted',
+                           'buckets': s.get_buckets()}, indent=2)
 
-    body = json.dumps({'result': 'success', 
-                       'buckets': s.get_buckets()}, indent=2)
+    return (body, 200, {'Content-length': len(body),
+                        'Content-type': 'application/json',
+                       }
+           )
+
+@app.route('/query', methods=['GET'])
+def query():
+    owner = request.args.get('owner')
+    query = request.args.get('query')
+    #check if owner has an active sale record or request
+    sales = db.session.query(Sale).filter(Sale.owner == owner).count()
+    if sales == 0:
+        body = json.dumps({"result": "error",
+                          "message": "Account required to make queries"})
+    elif query == 'mediators':
+        mediator_query = Kv.query.filter(Kv.value.ilike('%Willing to mediate: True%')).paginate(1, 10, False)
+        mediators = mediator_query.items
+        res = []
+        for m in mediators:
+            res.append(m.value)
+        body = json.dumps({"result": "success",
+                          "mediators": res})
     return (body, 200, {'Content-length': len(body),
                         'Content-type': 'application/json',
                        }
