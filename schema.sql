@@ -1,11 +1,11 @@
+PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
 CREATE TABLE owner (
     address varchar(64) primary key,
-    delegate varchar(64),
     nonce varchar(32),
     balance integer,
     bad_attempts integer
-);
-
+, delegate varchar(64));
 CREATE TABLE kv (
     key varchar(64) primary key,
     value blob,
@@ -13,13 +13,11 @@ CREATE TABLE kv (
     sale integer,    /* which sale/bucket is this stored under */
     foreign key(owner) references owner(address)
 );
-
 CREATE TABLE wallet (
     address varchar(64) primary key,
     contact varchar(256),
     owner varchar(64)
 );
-
 CREATE TABLE sale (
     id integer primary key,
     owner varchar(64),
@@ -31,7 +29,6 @@ CREATE TABLE sale (
     bytes_used integer,
     foreign key(owner) references owner(address)
 );
-
 CREATE TABLE log (
     created text,
     ip varchar(45),  /* max length of ipv6 address */
@@ -41,3 +38,4 @@ CREATE TABLE log (
     message text,
     foreign key(owner) references owner(address)
 );
+COMMIT;
