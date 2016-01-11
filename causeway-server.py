@@ -3,7 +3,7 @@
 Causeway Server - key/value storage server geared toward small files with ECSDA signature auth
 
 Usage:
-    python3 server.py
+    python3 causeway-server.py
 '''
 import os, json, random, time, string
 from settings import DATABASE, PRICE, DATA_DIR, SERVER_PORT
@@ -12,6 +12,7 @@ from flask import Flask
 from flask import request
 from flask import abort, url_for
 from flask.ext.sqlalchemy import SQLAlchemy
+from sqlalchemy import and_
 
 #from two1.lib.wallet import Wallet
 #from two1.lib.bitserv.flask import Payment
@@ -144,13 +145,14 @@ def request_hosting():
         db.session.commit()
 
     count = db.session.query(Sale).filter(Sale.price == 0).count()
-    if count > 4:
+    if count < 4:
         s = Sale(owner, contact, 1, 30, 0)
         db.session.add(s)
         db.session.commit()
         body = json.dumps({'result': 'success', 
                            'buckets': s.get_buckets()}, indent=2)
     else:
+        s = db.session.query(Sale).filter(and_(Sale.price == 0, Sale.owner == o.address)).first()
         body = json.dumps({'result': 'error',
                            'message': 'Maximum free buckets granted',
                            'buckets': s.get_buckets()}, indent=2)
@@ -200,17 +202,20 @@ def put():
     s = in_obj['signature']
     d = in_obj['signature_address']
 
-    if o == d:
-        # this is enrollment
-        owner = Owner.query.filter_by(address=d).first()
-    else:
-        owner = Owner.query.filter_by(delegate=d).first()
-
-    if owner.nonce != n or not verify(d, k + v + d + n, s) :
-        body = json.dumps({'error': 'Incorrect signature.'})
+    owner = Owner.query.filter_by(address=o).first()
+    if owner is None:
+        body = json.dumps({'error': 'User not found'})
+        code = 403
+    elif owner.nonce != n:
+        body = json.dumps({'error': 'Bad nonce'})
+        code = 401
+    elif not verify(d, k + v + d + n, s) :
+        body = json.dumps({'error': 'Incorrect signature'})
         code = 401
     else:
         size = len(k) + len(v)
+
+        # need to also check that we have an enrollment that makes this a delegate of this owner
 
         # check if owner has enough free storage
         # get free space from each of owner's buckets
@@ -227,8 +232,7 @@ def put():
             code = 403 
         else:
             # check if key already exists and is owned by the same owner
-            kv = db.session.query(Kv).filter_by(key=k).filter_by(owner=o).first()
-                    
+            kv = db.session.query(Kv).filter(and_(Kv.key == k, Kv.owner == o)).first()
             if kv is None:
                 kv = Kv(k, v, o, sale_id)
                 db.session.add(kv)
