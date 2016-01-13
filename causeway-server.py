@@ -165,13 +165,13 @@ def request_hosting():
 @app.route('/query', methods=['GET'])
 def query():
     owner = request.args.get('owner')
-    query = request.args.get('query')
+    string = request.args.get('query')
     #check if owner has an active sale record or request
     sales = db.session.query(Sale).filter(Sale.owner == owner).count()
     if sales == 0:
         body = json.dumps({"result": "error",
                           "message": "Account required to make queries"})
-    elif query == 'mediators':
+    elif string == 'mediators':
         mediator_query = Kv.query.filter(Kv.value.ilike('%Willing to mediate: True%')).paginate(1, 10, False)
         mediators = mediator_query.items
         res = []
@@ -179,6 +179,14 @@ def query():
             res.append(m.value)
         body = json.dumps({"result": "success",
                           "mediators": res})
+    elif string == 'jobs':
+        q = Kv.query.filter(Kv.value.ilike('%Job name:%')).paginate(1, 10, False)
+        items = q.items
+        res = []
+        for i in items:
+            res.append(i.value)
+        body = json.dumps({"result": "success",
+                          string: res})
     return (body, 200, {'Content-length': len(body),
                         'Content-type': 'application/json',
                        }
