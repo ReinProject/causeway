@@ -172,7 +172,7 @@ def query():
         body = json.dumps({"result": "error",
                           "message": "Account required to make queries"})
     elif string == 'mediators':
-        mediator_query = Kv.query.filter(Kv.value.ilike('%Willing to mediate: True%')).paginate(1, 10, False)
+        mediator_query = Kv.query.filter(Kv.value.ilike('%Willing to mediate: True%')).paginate(1, 100, False)
         mediators = mediator_query.items
         res = []
         for m in mediators:
@@ -180,7 +180,18 @@ def query():
         body = json.dumps({"result": "success",
                           "mediators": res})
     elif string == 'jobs':
-        q = Kv.query.filter(Kv.value.ilike('%Job name:%')).paginate(1, 10, False)
+        q = Kv.query.filter(Kv.value.ilike('%Job name:%')).paginate(1, 100, False)
+        items = q.items
+        res = []
+        for i in items:
+            res.append(i.value)
+        body = json.dumps({"result": "success",
+                          string: res})
+    elif string == 'bids':
+        # a bare sql query would look like:
+        #      select * from bids inner join jobs on bid.job_id = job.job_id and job.owner == %s
+        # instead we'll use a relationship where a bid has a job_id when we want tighter coupling
+        q = Kv.query.filter(Kv.value.ilike('%Rein Bid%')).paginate(1, 100, False)
         items = q.items
         res = []
         for i in items:
