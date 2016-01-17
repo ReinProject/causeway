@@ -196,6 +196,17 @@ def query():
             res.append(i.value)
         body = json.dumps({"result": "success",
                           string: res})
+    elif string == 'delivery':
+        job_id = request.args.get('job_id')
+        q = Kv.query.filter(Kv.value.ilike('%Rein Delivery%'+job_id+'%')).paginate(1, 100, False)
+        items = q.items
+        res = []
+        for i in items:
+            if i is not None:
+                click.echo(i.key)
+                res.append(i.value)
+        body = json.dumps({"result": "success",
+                          string: res})
     elif string == 'bids':
         # a bare sql query would look like:
         #      select * from bids inner join jobs on bid.job_id = job.job_id and job.owner == %s
