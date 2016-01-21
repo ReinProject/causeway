@@ -1,11 +1,12 @@
 #!/usr/bin/env python
-import bitcoinsig
 import re
-import json
+import bitcoinecdsa
+import unittest
+
 
 def strip_armor(sig, dash_space=False):
     '''Removes ASCII-armor from a signed message by default exlcudes 'dash-space' headers'''
-    sig = sig.replace('- ----', '-'*5) if dash_space else sig
+    sig = sig.replace('- ----', '-' * 5) if dash_space else sig
     sig = re.sub("-{5}BEGIN BITCOIN SIGNED MESSAGE-{5}", "", sig)
     sig = re.sub(
         "\n+-{5}BEGIN SIGNATURE-{5}[\n\dA-z+=/]+-{5}END BITCOIN SIGNED MESSAGE-{5}\n*",
@@ -16,9 +17,10 @@ def strip_armor(sig, dash_space=False):
     sig = re.sub("\n\n", "", sig)
     return sig
 
+
 def parse_sig(sig):
     '''
-    Takes an ASCII-armored signature and returns a dictionary of it's info.
+    Takes an ASCII-armored signature and returns a dictionary of its info.
     Returns the signature string, the signing key, and all of the information
     assigned within the message, for example:
        parse_sig(sig)['Name/handle'] === "David Sterry"
@@ -33,50 +35,44 @@ def parse_sig(sig):
         sig
     )
     if m:
-        ret['master'] = m.group(1)
+        ret['signature_address'] = m.group(1)
         ret['signature'] = m.group(2)
     else:
         return False
     return ret
 
+
 def verify_sig(sig):
     '''The base function for verifying an ASCII-armored signature.'''
     sig_info = parse_sig(sig)
-    if sig_info != False:
-        valid = bitcoinsig.verify_message(
-            sig_info['master'],
-            sig_info['signature'],
-            strip_armor(sig)
+    if sig_info:
+        message = strip_armor(sig)
+        valid = bitcoinecdsa.verify(
+            sig_info['signature_address'],
+            message,
+            sig_info['signature']
         )
     else:
         valid = False
     return {'valid': valid, 'info': sig_info}
 
+
 def validate_enrollment(enrollment_signature_text):
     a = verify_sig(enrollment_signature_text)
-    if a['valid'] != False:
-        return a 
+    if a['valid']:
+        return a
     else:
         return False
 
-def enroll(user):
-    enrollment = "Rein User Enrollment\nUser: %s\nContact: %s\nMaster signing address: %s\n" % (user.name, user.contact, user.maddr)
-    f = open(config.enroll_filename, 'w')
-    f.write(enrollment)
-    f.close()
-    click.echo("\n%s\n" % enrollment)
-    signed = click.prompt("File containing signed statement", type=str, default=config.sig_enroll_filename)
-    f = open(signed, 'r')
-    sig = f.read()
-    return nevalidate_enrollment(sig)
-   
+
 def validate_review(reviewer_text):
     a = verify_sig(reviewer_text)
     return [
         a['valid'],
-        a['info']['master'],
+        a['info']['signature_address'],
         strip_armor(reviewer_text).replace('- ----', '-----')
     ]
+
 
 def validate_audit(auditor_text):
     a = verify_sig(auditor_text)
@@ -94,14 +90,15 @@ def validate_audit(auditor_text):
             line = line.replace('- ----', '-----')
         ret += line + '\n'
     return [
-        a[0],
-        a[1]['master'],
+        a['valid'],
+        a['info'],
         ret
     ]
 
+
 if __name__ == "__main__":
     # enrollment sig
-    sig = """-----BEGIN BITCOIN SIGNED MESSAGE-----
+    sig1 = """-----BEGIN BITCOIN SIGNED MESSAGE-----
 Name/handle: Test Person
 Contact: tester@example.com
 Master signing address: 1CptxARjqcfkVwGFSjR82zmPT8YtRMubub
@@ -118,7 +115,8 @@ Contact: knightdk on Bitcointalk.org
 Master signing address: 16mT7jrpkjnJBD7a3TM2awyxHub58H6r6Z
 Delegate signing address: N/A
 Willing to mediate: Y
-Mediation public key: 04594f2582c859c4f65084ee7fe8e9ec2d695bb988a3f53db48eaaff6ff3a0282b2be0c79fefca01277404d0fdc3a923e8ed02efd6ab96980f3e229a81fbe032e9
+Mediation public key: 04594f2582c859c4f65084ee7fe8e9ec2d695bb988a3f53db48eaaff6ff3a0282b2be0c79"""\
+"""fefca01277404d0fdc3a923e8ed02efd6ab96980f3e229a81fbe032e9
 - ----BEGIN SIGNATURE-----
 16mT7jrpkjnJBD7a3TM2awyxHub58H6r6Z
 GxHE6iJH2aMpsRk7cszvXsLieDawzArpt7XDdOPhVFD5KVqIvKve1fwUKeN6ct4bld41XLdrZ7Dvaj7x1Oiw0uo=
@@ -136,7 +134,8 @@ Contact: knightdk on Bitcointalk.org
 Master signing address: 16mT7jrpkjnJBD7a3TM2awyxHub58H6r6Z
 Delegate signing address: N/A
 Willing to mediate: Y
-Mediation public key: 04594f2582c859c4f65084ee7fe8e9ec2d695bb988a3f53db48eaaff6ff3a0282b2be0c79fefca01277404d0fdc3a923e8ed02efd6ab96980f3e229a81fbe032e9
+Mediation public key: 04594f2582c859c4f65084ee7fe8e9ec2d695bb988a3f53db48eaaff6ff3a0282b2be0c79"""\
+"""fefca01277404d0fdc3a923e8ed02efd6ab96980f3e229a81fbe032e9
 - ----BEGIN SIGNATURE-----
 16mT7jrpkjnJBD7a3TM2awyxHub58H6r6Z
 GxHE6iJH2aMpsRk7cszvXsLieDawzArpt7XDdOPhVFD5KVqIvKve1fwUKeN6ct4bld41XLdrZ7Dvaj7x1Oiw0uo=
@@ -151,11 +150,11 @@ IMcU7MvLl7T+hY0mmMw6mblLstnXd9Ly36z7uYMqv7ZZEuZQOvuXN2GjYU0Nq4So9GKQRkQwIis7EiN6
 -----END BITCOIN SIGNED MESSAGE-----"""
 
     # Test all of the functions
-    print(validate_enrollment(sig))
+    print(validate_enrollment(sig1))
     print(validate_review(sig2))
     print(validate_audit(sig3))
 
     # Passing the output through all of the functions
-    print(validate_enrollment(validate_review(validate_audit(sig3)[2])[2])[0])
-    print(validate_enrollment(validate_review(sig2)[2])[0])
-    print(validate_enrollment(sig1)[0])
+    print(validate_enrollment(validate_review(validate_audit(sig3)[2])[2])['info'])
+    print(validate_enrollment(validate_review(sig2)[2])['info'])
+    print(validate_enrollment(sig1)['info'])
