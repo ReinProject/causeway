@@ -189,7 +189,7 @@ def query():
                           string: res})
     elif string == 'in-process':
         worker = request.args.get('worker')
-        q = Kv.query.filter(Kv.value.ilike('%Worker\'s public key: '+worker+'%')).paginate(1, 100, False)
+        q = Kv.query.filter(Kv.value.ilike('%Worker public key: '+worker+'%')).paginate(1, 100, False)
         items = q.items
         res = []
         for i in items:
@@ -197,14 +197,14 @@ def query():
         body = json.dumps({"result": "success",
                           string: res})
     elif string == 'delivery':
-        job_id = request.args.get('job_id')
-        q = Kv.query.filter(Kv.value.ilike('%Rein Delivery%'+job_id+'%')).paginate(1, 100, False)
-        items = q.items
+        job_ids = request.args.get('job_ids')
         res = []
-        for i in items:
-            if i is not None:
-                click.echo(i.key)
-                res.append(i.value)
+        for job_id in job_ids.split(','):   
+            q = Kv.query.filter(Kv.value.ilike('%Rein Delivery%'+job_id+'%')).paginate(1, 100, False)
+            items = q.items
+            for i in items:
+                if i is not None:
+                    res.append(i.value)
         body = json.dumps({"result": "success",
                           string: res})
     elif string == 'bids':
