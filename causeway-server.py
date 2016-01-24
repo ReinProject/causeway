@@ -168,56 +168,49 @@ def query():
     string = request.args.get('query')
     #check if owner has an active sale record or request
     sales = db.session.query(Sale).filter(Sale.owner == owner).count()
+    res = []
     if sales == 0:
         body = json.dumps({"result": "error",
                           "message": "Account required to make queries"})
     elif string == 'mediators':
         mediator_query = Kv.query.filter(Kv.value.ilike('%\nWilling to mediate: True%')).paginate(1, 100, False)
         mediators = mediator_query.items
-        res = []
         for m in mediators:
             res.append(m.value)
-        body = json.dumps({"result": "success",
-                          "mediators": res})
     elif string == 'jobs':
         q = Kv.query.filter(Kv.value.like('%\nRein Job%')).paginate(1, 100, False)
         items = q.items
-        res = []
         for i in items:
             res.append(i.value)
-        body = json.dumps({"result": "success",
-                          string: res})
+    elif string == 'bids':
+        q = Kv.query.filter(Kv.value.like('%\nRein Bid%')).paginate(1, 100, False)
+        items = q.items
+        for i in items:
+            res.append(i.value)
     elif string == 'in-process':
         worker = request.args.get('worker')
         q = Kv.query.filter(Kv.value.ilike('%Worker public key: '+worker+'%')).paginate(1, 100, False)
         items = q.items
-        res = []
         for i in items:
             res.append(i.value)
-        body = json.dumps({"result": "success",
-                          string: res})
+    elif string == 'by_job_id':
+        job_ids = request.args.get('job_ids')
+        for job_id in job_ids.split(','):   
+            q = Kv.query.filter(Kv.value.ilike('%Job ID: '+job_id+'%')).paginate(1, 100, False)
+            items = q.items
+            for i in items:
+                if i is not None:
+                    res.append(i.value)
     elif string == 'delivery':
         job_ids = request.args.get('job_ids')
-        res = []
         for job_id in job_ids.split(','):   
             q = Kv.query.filter(Kv.value.ilike('%Rein Delivery%'+job_id+'%')).paginate(1, 100, False)
             items = q.items
             for i in items:
                 if i is not None:
                     res.append(i.value)
-        body = json.dumps({"result": "success",
-                          string: res})
-    elif string == 'bids':
-        # a bare sql query would look like:
-        #      select * from bids inner join jobs on bid.job_id = job.job_id and job.owner == %s
-        # instead we'll use a relationship where a bid has a job_id when we want tighter coupling
-        q = Kv.query.filter(Kv.value.like('%\nRein Bid%')).paginate(1, 100, False)
-        items = q.items
-        res = []
-        for i in items:
-            res.append(i.value)
-        body = json.dumps({"result": "success",
-                          string: res})
+    body = json.dumps({"result": "success",
+                       string: res})
     return (body, 200, {'Content-length': len(body),
                         'Content-type': 'application/json',
                        }
