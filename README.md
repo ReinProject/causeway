@@ -1,6 +1,6 @@
-# causeway
+# Python Rein Server 
  
-A storage service geared toward small files with ECDSA signature auth that works with the 21 Bitcoin Computer
+A storage service geared toward small ECDSA-signed documents with ECDSA authentication
 
 This project is for a server that will store and return data for a certain amount of time and accept updates if they are signed by a user's payment address.
 
@@ -19,23 +19,6 @@ This project is for a server that will store and return data for a certain amoun
 
 Note: Charges bandwidth against sale record associated with key/value.
 
-### /price
-    Parameters
-        None
-        
-    Returns
-        price - satoshis for 1 MB storage + 50 MB transfer
-
-### /buy
-    Parameters
-        contact - email address to notify on expiration
-        address - owner of new hosting bucket
-
-    Returns
-        result - success or error
-        buckets - listing free space, reamining bandwidth, and expiration
-
-        
 ### /put (POST)
     Parameters
         key - string
@@ -82,6 +65,22 @@ Note: nonce will later be stored until used or next nonce generated for address
         stored - bytes stored
         free - bytes free
         price - satoshis for 1 MB storage + 50 MB transfer
+
+### /price
+    Parameters
+        None
+        
+    Returns
+        price - satoshis for 1 MB storage + 50 MB transfer
+
+### /buy
+    Parameters
+        contact - email address to notify on expiration
+        address - owner of new hosting bucket
+
+    Returns
+        result - success or error
+        buckets - listing free space, reamining bandwidth, and expiration
 
 
 ## Installation
