@@ -187,9 +187,21 @@ def query():
         items = q.items
         for i in items:
             res.append(i.value)
+    elif string == 'deliveries':
+        job_creator = request.args.get('job_creator')
+        q = Kv.query.filter(Kv.value.ilike('%Rein Delivery%Job creator public key: '+job_creator+'%')).paginate(1, 100, False)
+        items = q.items
+        for i in items:
+            res.append(i.value)
     elif string == 'in-process':
         worker = request.args.get('worker')
         q = Kv.query.filter(Kv.value.ilike('%Worker public key: '+worker+'%')).paginate(1, 100, False)
+        items = q.items
+        for i in items:
+            res.append(i.value)
+    elif string == 'review':
+        mediator = request.args.get('mediator')
+        q = Kv.query.filter(Kv.value.ilike('%Mediator public key: '+mediator+'%')).paginate(1, 100, False)
         items = q.items
         for i in items:
             res.append(i.value)
@@ -201,14 +213,24 @@ def query():
             for i in items:
                 if i is not None:
                     res.append(i.value)
-    elif string == 'delivery':
+    elif string == 'dispute':
         job_ids = request.args.get('job_ids')
         for job_id in job_ids.split(','):   
+            last_len = len(res) 
+            print(last_len)
             q = Kv.query.filter(Kv.value.ilike('%Rein Delivery%'+job_id+'%')).paginate(1, 100, False)
             items = q.items
             for i in items:
                 if i is not None:
                     res.append(i.value)
+            if len(res) == last_len: #we didn't find a delivery for this job id, look for an offer
+                q = Kv.query.filter(Kv.value.ilike('%Rein Offer%'+job_id+'%')).paginate(1, 100, False)
+                items = q.items
+                for i in items:
+                    if i is not None:
+                        res.append(i.value)
+            print(len(res))
+                
     body = json.dumps({"result": "success",
                        string: res})
     return (body, 200, {'Content-length': len(body),
