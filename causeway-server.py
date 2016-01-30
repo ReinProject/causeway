@@ -6,7 +6,7 @@ Usage:
     python3 causeway-server.py
 '''
 import os, json, random, time, string
-from settings import DATABASE, PRICE, DATA_DIR, SERVER_PORT
+from settings import DATABASE, PRICE, DATA_DIR, SERVER_PORT, DEBUG
 
 from flask import Flask
 from flask import request
@@ -441,5 +441,6 @@ def info():
     return json.dumps(links, indent=2)
 
 if __name__ == '__main__':
-    app.debug = True
+    if DEBUG:
+        app.debug = True
     app.run(host='0.0.0.0', port=SERVER_PORT)

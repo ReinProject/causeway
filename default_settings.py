@@ -1,10 +1,12 @@
 '''Configuration file - copy to settings.py and fill in your own settings.'''
 
-SERVER_PORT = 5000
+SERVER_PORT = 2016
  
-DATABASE = '/home/twenty/var/sqlite/causeway.db'
+DATABASE = '/home/cw/causeway/causeway.db'
 
-DATA_DIR = '/home/twenty/var/storage'
+DEBUG = False
+
+DATA_DIR = ''
 
 # Price in satoshis for 1MB storage and 50MB transfer
 PRICE = 1000
