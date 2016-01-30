@@ -36,11 +36,11 @@ def home():
     '''Return service, pricing and endpoint information'''
     home_obj = [{"name": "causeway/1.freebeer",       # service 'causeway', version '1'
                  "pricing-type": "per-mb",   # pricing is listed per 1000000 bytes
-                 "pricing" : [{"rpc": "buy",
-                               "per-req": 0,
-                               "per-unit": PRICE,
-                               "description": "1 MB hosting, 50 MB bandwidth, 1 year expiration"
-                              },
+                 "pricing" : [#{"rpc": "buy",
+                              # "per-req": 0,
+                              # "per-unit": PRICE,
+                              # "description": "1 MB hosting, 50 MB bandwidth, 1 year expiration"
+                              #},
                               {"rpc": "request",
                                "per-req": 0,
                                "per-unit": 0,
@@ -60,8 +60,7 @@ def home():
                                "per-req": 0,
                                "per-mb": 0
                               }],
-                  "description": "This Causeway server provides microhosting services. Download the "\
-                  "client and server at https://github.com/weex/causeway/archive/master.zip"
+                  "description": "This Causeway server provides microhosting services."
                 }
                ]
 
