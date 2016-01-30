@@ -1,4 +1,4 @@
-# Python Rein Server 
+# Causeway Server - Rein
  
 A storage service geared toward small ECDSA-signed documents with ECDSA authentication
 
@@ -87,12 +87,13 @@ Note: nonce will later be stored until used or next nonce generated for address
 
 ### raspbian
 
-First choose where you will host your database, this database will host operational as well as customer-uploaded data.
+First choose where you will host your database, this database will host operational as well as customer-uploaded data. We assume you've made a new user called cw and cloned to ~/causeway.
 
-    sudo apt-get install python3-flask-sqlalchemy sqlite3
-    sqlite3 /path/to/db/causeway.db < schema.sql
+    sudo apt-get install sqlite3 python3-pip
+    sudo pip3 install -r requirements.txt
+    sqlite3 /home/cw/causeway/causeway.db < schema.sql
 
-Then you'll need to copy default\_settings.py to settings.py and change DATABASE to the full path where you created the database.
+Then you'll need to copy default\_settings.py to settings.py. If you have installed to a different location or would like to place the db file elsewhere, change DATABASE to the full path where you created the database.
 
 ***
 ** Roadmap **
