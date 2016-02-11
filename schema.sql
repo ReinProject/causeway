@@ -10,7 +10,7 @@ CREATE TABLE kv (
     key varchar(64) primary key,
     value blob,
     owner varchar(64),
-    testnet integer,
+    testnet boolean,
     sale integer,    /* which sale/bucket is this stored under */
     foreign key(owner) references owner(address)
 );
