@@ -165,6 +165,12 @@ def request_hosting():
 def query():
     owner = request.args.get('owner')
     string = request.args.get('query')
+    testnet = request.args.get('testnet')
+    if testnet == 'True':
+        testnet = True
+    else:
+        testnet = False
+        
     #check if owner has an active sale record or request
     sales = db.session.query(Sale).filter(Sale.owner == owner).count()
     res = []
@@ -172,42 +178,49 @@ def query():
         body = json.dumps({"result": "error",
                           "message": "Account required to make queries"})
     elif string == 'mediators':
-        mediator_query = Kv.query.filter(Kv.value.ilike('%\nWilling to mediate: True%')).paginate(1, 100, False)
+        mediator_query = Kv.query.filter(and_(Kv.testnet == testnet,
+                                              Kv.value.ilike('%\nWilling to mediate: True%'))).paginate(1, 100, False)
         mediators = mediator_query.items
         for m in mediators:
             res.append(m.value)
     elif string == 'jobs':
-        q = Kv.query.filter(Kv.value.like('%\nRein Job%')).paginate(1, 100, False)
+        q = Kv.query.filter(and_(Kv.testnet == testnet,
+                                 Kv.value.like('%\nRein Job%'))).paginate(1, 100, False)
         items = q.items
         for i in items:
             res.append(i.value)
     elif string == 'bids':
-        q = Kv.query.filter(Kv.value.like('%\nRein Bid%')).paginate(1, 100, False)
+        q = Kv.query.filter(and_(Kv.testnet == testnet,
+                                 Kv.value.like('%\nRein Bid%'))).paginate(1, 100, False)
         items = q.items
         for i in items:
             res.append(i.value)
     elif string == 'deliveries':
         job_creator = request.args.get('job_creator')
-        q = Kv.query.filter(Kv.value.ilike('%Rein Delivery%Job creator public key: '+job_creator+'%')).paginate(1, 100, False)
+        q = Kv.query.filter(and_(Kv.testnet == testnet,
+                                 Kv.value.ilike('%Rein Delivery%Job creator public key: '+job_creator+'%'))).paginate(1, 100, False)
         items = q.items
         for i in items:
             res.append(i.value)
     elif string == 'in-process':
         worker = request.args.get('worker')
-        q = Kv.query.filter(Kv.value.ilike('%Worker public key: '+worker+'%')).paginate(1, 100, False)
+        q = Kv.query.filter(and_(Kv.testnet == testnet,
+                                 Kv.value.ilike('%Worker public key: '+worker+'%'))).paginate(1, 100, False)
         items = q.items
         for i in items:
             res.append(i.value)
     elif string == 'review':
         mediator = request.args.get('mediator')
-        q = Kv.query.filter(Kv.value.ilike('%Mediator public key: '+mediator+'%')).paginate(1, 100, False)
+        q = Kv.query.filter(and_(Kv.testnet == testnet,
+                                 Kv.value.ilike('%Mediator public key: '+mediator+'%'))).paginate(1, 100, False)
         items = q.items
         for i in items:
             res.append(i.value)
     elif string == 'by_job_id':
         job_ids = request.args.get('job_ids')
         for job_id in job_ids.split(','):   
-            q = Kv.query.filter(Kv.value.ilike('%Job ID: '+job_id+'%')).paginate(1, 100, False)
+            q = Kv.query.filter(and_(Kv.testnet == testnet,
+                                     Kv.value.ilike('%Job ID: '+job_id+'%'))).paginate(1, 100, False)
             items = q.items
             for i in items:
                 if i is not None:
@@ -254,6 +267,10 @@ def put():
     n = in_obj['nonce']
     s = in_obj['signature']
     d = in_obj['signature_address']
+    if 'testnet' in in_obj:
+        t = in_obj['testnet']
+    else:
+        t = False
 
     owner = Owner.query.filter_by(address=o).first()
     if owner is None:
@@ -287,7 +304,7 @@ def put():
             # check if key already exists and is owned by the same owner
             kv = db.session.query(Kv).filter(and_(Kv.key == k, Kv.owner == o)).first()
             if kv is None:
-                kv = Kv(k, v, o, sale_id)
+                kv = Kv(k, v, o, sale_id, testnet)
                 db.session.add(kv)
                 db.session.commit()
             else:
