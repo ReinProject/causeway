@@ -33,12 +33,14 @@ class Kv(db.Model):
     value = db.Column(db.String(8192))
     owner = db.Column(db.String(64))
     sale = db.Column(db.Integer)        #aka bucket
+    testnet = db.Column(db.Boolean)
 
-    def __init__(self, key, value, owner, sale):
+    def __init__(self, key, value, owner, sale, testnet=False):
         self.key = key
         self.value = value
         self.owner = owner
         self.sale = sale
+        self.testnet = testnet
 
     def __repr__(self):
         return "<Kv %r>" % self.key
