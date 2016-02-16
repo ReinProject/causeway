@@ -168,7 +168,7 @@ def query():
     owner = request.args.get('owner')
     string = request.args.get('query')
     testnet = request.args.get('testnet')
-    if testnet == 'True':
+    if testnet == 'True' or testnet == '1' or testnet == 1:
         testnet = True
     else:
         testnet = False
