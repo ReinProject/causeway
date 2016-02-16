@@ -143,7 +143,8 @@ def request_hosting():
         db.session.add(o)
         db.session.commit()
 
-    count = db.session.query(Sale).filter(Sale.price == 0).count()
+    count = db.session.query(Sale).filter(and_(Sale.price == 0, 
+                                               Sale.owner == owner)).count()
     if count < 4:
         s = Sale(owner, contact, 1, 30, 0)
         db.session.add(s)
@@ -151,7 +152,8 @@ def request_hosting():
         body = json.dumps({'result': 'success', 
                            'buckets': s.get_buckets()}, indent=2)
     else:
-        s = db.session.query(Sale).filter(and_(Sale.price == 0, Sale.owner == o.address)).first()
+        s = db.session.query(Sale).filter(and_(Sale.price == 0,
+                                               Sale.owner == owner)).first()
         body = json.dumps({'result': 'error',
                            'message': 'Maximum free buckets granted',
                            'buckets': s.get_buckets()}, indent=2)
@@ -268,9 +270,9 @@ def put():
     s = in_obj['signature']
     d = in_obj['signature_address']
     if 'testnet' in in_obj:
-        t = in_obj['testnet']
+        testnet = in_obj['testnet']
     else:
-        t = False
+        testnet = False
 
     owner = Owner.query.filter_by(address=o).first()
     if owner is None:
