@@ -4,8 +4,8 @@ CREATE TABLE owner (
     address varchar(64) primary key,
     nonce varchar(32),
     balance integer,
-    bad_attempts integer
-, delegate varchar(64));
+    bad_attempts integer,
+    delegate varchar(64));
 CREATE TABLE kv (
     key varchar(64) primary key,
     value blob,
