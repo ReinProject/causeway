@@ -1,8 +1,12 @@
 # Causeway Server - Rein
  
-A storage service geared toward small ECDSA-signed documents with ECDSA authentication
+Server component of Rein decentralized labor market.
 
-This project is for a server that will store and return data for a certain amount of time and accept updates if they are signed by a user's payment address.
+Stores kv pairs and verifies signatures and authentication via ECDSA.
+
+## Installation
+
+See [server_setup.md](doc/server_setup.md)
 
 ## REST API
 
@@ -83,25 +87,12 @@ Note: nonce will later be stored until used or next nonce generated for address
         buckets - listing free space, reamining bandwidth, and expiration
 
 
-## Installation
+## Roadmap
 
-### raspbian
-
-First choose where you will host your database, this database will host operational as well as customer-uploaded data. We assume you've made a new user called cw and cloned to ~/causeway.
-
-    sudo apt-get install sqlite3 python3-pip
-    sudo pip3 install -r requirements.txt
-    sqlite3 /home/cw/causeway/causeway.db < schema.sql
-
-Then you'll need to copy default\_settings.py to settings.py. If you have installed to a different location or would like to place the db file elsewhere, change DATABASE to the full path where you created the database.
-
-***
-** Roadmap **
-
-* Hosting is purchased in buckets which expire after one month.
+* Hosting will purchased in buckets that expire in one year..
 * A bucket holds 1 MB of data and comes with 50 MB of transfer.
-* If a bucket expires, key/values are redistributed to an owner's newer buckets if possible,
-  otherwise, the owner is notified via email that expiration is affecting hosting.
+* If a bucket expires, key/value-pairs are redistributed to an owner's newer buckets.
+  Otherwise, the owner is notified via email that expiration is affecting hosting.
 * Data is kept if bandwidth is exceeded just no longer served until more is purchased.
 
 ### /address
