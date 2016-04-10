@@ -5,14 +5,18 @@ Causeway Server - key/value storage server geared toward small files with ECSDA 
 Usage:
     python3 causeway-server.py
 '''
-import os, json, random, time, string
-from settings import DATABASE, PRICE, DATA_DIR, SERVER_PORT, DEBUG
-
 from flask import Flask
 from flask import request
 from flask import abort, url_for
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy import and_
+
+from settings import DATABASE, PRICE, DATA_DIR, SERVER_PORT, DEBUG
+import os
+import json
+import random
+import time
+import string
 
 #from two1.lib.wallet import Wallet
 #from two1.lib.bitserv.flask import Payment
@@ -457,6 +461,40 @@ def info():
             links.append(url)
 
     return json.dumps(links, indent=2)
+
+@app.route('/bitcoin', methods=['POST'])
+def query_bitcoin():
+    owner = request.args.get('owner')
+    string = request.args.get('query')
+    
+    sales = db.session.query(Sale).filter(Sale.owner == owner).count()
+    res = []
+    if sales == 0:
+        body = json.dumps({"result": "error",
+                          "message": "Account required to make queries"})
+    elif string == 'getbestblockhash':
+        res = json_rpc(string)
+        body = json.dumps(res)
+    return (body, 200, {'Content-length': len(body),
+                        'Content-type': 'application/json',
+                       }
+           )
+
+def json_rpc(command):
+    url = "http://%s:%s@%s:%s/" % (RPCUSER, RPCPASS, SERVER, RPCPORT)
+    headers = {'content-type': 'application/json'}
+    payload = {
+        "method": cmd,
+        "jsonrpc": "2.0",
+        "id": 0}
+    out = requests.post(url, data=json.dumps(payload), headers=headers).json()
+
+    try:
+        res = json.loads(out)
+    except:
+        res = {"output": out}
+    res['result'] = 'success'
+    return res
 
 if __name__ == '__main__':
     if DEBUG:
