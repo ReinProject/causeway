@@ -462,7 +462,7 @@ def info():
 
     return json.dumps(links, indent=2)
 
-@app.route('/bitcoin', methods=['POST'])
+@app.route('/bitcoin', methods=['GET', 'POST'])
 def query_bitcoin():
     owner = request.args.get('owner')
     string = request.args.get('query')
@@ -475,6 +475,9 @@ def query_bitcoin():
     elif string == 'getbestblockhash' or string == 'getblockcount':
         res = json_rpc(string)
         body = json.dumps(res)
+    elif string == 'getnago':
+        res = json_rpc('getblockcount')
+        body = res
     return (body, 200, {'Content-length': len(body),
                         'Content-type': 'application/json',
                        }
