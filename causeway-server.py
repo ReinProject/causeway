@@ -471,12 +471,12 @@ def query_bitcoin():
     
     sales = db.session.query(Sale).filter(Sale.owner == owner).count()
     res = []
+    out = {}
     if sales == 0:
         body = json.dumps({"result": "error",
                            "message": "Account required to make queries"})
     elif string == 'getbydepth':
         depth = request.args.get('depth')
-        out = {}
         res = json_rpc('getblockcount')
         if 'output' in res and 'result' in res['output']:
             height = res['output']['result'] - int(depth)
@@ -486,11 +486,11 @@ def query_bitcoin():
         res = json_rpc('getblockheader', [request.args.get('hash')])
         height = res['output']['result']['height']
 
-    res = json_rpc('getblockhash', [height])
+    res = json_rpc('getblockhash', [int(height)])
     out['height'] = height
     if 'output' in res and 'result' in res['output']:
         out['hash'] = res['output']['result']
-        res = json_rpc('getblockheader', [out['hash']])
+        res = json_rpc('getblockheader', [str(out['hash'])])
         out['time'] = res['output']['result']['time']
         out['height'] = height
         body = json.dumps(out)
