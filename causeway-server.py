@@ -474,26 +474,29 @@ def query_bitcoin():
     if sales == 0:
         body = json.dumps({"result": "error",
                            "message": "Account required to make queries"})
-    #elif string == 'getbyhash':
-    #elif string == 'getbyheight':
     elif string == 'getbydepth':
         depth = request.args.get('depth')
         out = {}
         res = json_rpc('getblockcount')
         if 'output' in res and 'result' in res['output']:
             height = res['output']['result'] - int(depth)
-            res = json_rpc('getblockhash', [height])
-            out['height'] = height
-            print(out['height'])
-            out['hash'] = res['output']['result']
-            print(out['hash'])
-            res = json_rpc('getblockheader', [out['hash']])
-            out['time'] = res['output']['result']['time']
-            print(out['time'])
-            body = json.dumps(out)
-        else:
-            body = json.dumps({"result": "error",
-                               "message": "Invalid n or RPC error"})
+    elif string == 'getbyheight':
+        height = request.args.get('height')
+    elif string == 'getbyhash':
+        res = json_rpc('getblockheader', [request.args.get('hash')])
+        height = res['output']['result']['height']
+
+    res = json_rpc('getblockhash', [height])
+    out['height'] = height
+    if 'output' in res and 'result' in res['output']:
+        out['hash'] = res['output']['result']
+        res = json_rpc('getblockheader', [out['hash']])
+        out['time'] = res['output']['result']['time']
+        out['height'] = height
+        body = json.dumps(out)
+    else:
+        body = json.dumps({"result": "error",
+                           "message": "Invalid depth or RPC error"})
     return (body, 200, {'Content-length': len(body),
                         'Content-type': 'application/json',
                        }
