@@ -472,7 +472,7 @@ def query_bitcoin():
     if sales == 0:
         body = json.dumps({"result": "error",
                            "message": "Account required to make queries"})
-    elif string == 'getbestblockhash':
+    elif string == 'getbestblockhash' or string == 'getblockcount':
         res = json_rpc(string)
         body = json.dumps(res)
     return (body, 200, {'Content-length': len(body),
