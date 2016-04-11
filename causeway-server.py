@@ -471,7 +471,7 @@ def query_bitcoin():
     res = []
     if sales == 0:
         body = json.dumps({"result": "error",
-                          "message": "Account required to make queries"})
+                           "message": "Account required to make queries"})
     elif string == 'getbestblockhash':
         res = json_rpc(string)
         body = json.dumps(res)
@@ -484,7 +484,7 @@ def json_rpc(command):
     url = "http://%s:%s@%s:%s/" % (RPCUSER, RPCPASS, SERVER, RPCPORT)
     headers = {'content-type': 'application/json'}
     payload = {
-        "method": cmd,
+        "method": command,
         "jsonrpc": "2.0",
         "id": 0}
     out = requests.post(url, data=json.dumps(payload), headers=headers).json()
