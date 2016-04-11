@@ -17,6 +17,7 @@ import json
 import random
 import time
 import string
+import requests
 
 #from two1.lib.wallet import Wallet
 #from two1.lib.bitserv.flask import Payment
