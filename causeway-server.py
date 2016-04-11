@@ -465,6 +465,7 @@ def info():
 
 @app.route('/bitcoin', methods=['GET', 'POST'])
 def query_bitcoin():
+    # to begin, get hash, block height, and time for latest, then n-blocks-ago, or for a block hash
     owner = request.args.get('owner')
     string = request.args.get('query')
     
@@ -473,22 +474,39 @@ def query_bitcoin():
     if sales == 0:
         body = json.dumps({"result": "error",
                            "message": "Account required to make queries"})
-    elif string == 'getbestblockhash' or string == 'getblockcount':
-        res = json_rpc(string)
-        body = json.dumps(res)
-    elif string == 'getnago':
+    #elif string == 'getbyhash':
+    #elif string == 'getbyheight':
+    elif string == 'getbydepth':
+        depth = request.args.get('depth')
+        out = {}
         res = json_rpc('getblockcount')
-        body = res
+        if 'output' in res and 'result' in res['output']:
+            height = res['output']['result'] - int(depth)
+            res = json_rpc('getblockhash', [height])
+            out['height'] = height
+            print(out['height'])
+            out['hash'] = res['output']['result']
+            print(out['hash'])
+            res = json_rpc('getblock', [out['hash']])
+            out['time'] = res['output']['result']['time']
+            print(out['time'])
+            body = json.dumps(out)
+        else:
+            body = json.dumps({"result": "error",
+                               "message": "Invalid n or RPC error"})
     return (body, 200, {'Content-length': len(body),
                         'Content-type': 'application/json',
                        }
            )
 
-def json_rpc(command):
+def json_rpc(command, params=None):
     url = "http://%s:%s@%s:%s/" % (RPCUSER, RPCPASS, SERVER, RPCPORT)
     headers = {'content-type': 'application/json'}
+    if params is None:
+        params = []
     payload = {
         "method": command,
+	"params": params,
         "jsonrpc": "2.0",
         "id": 0}
     out = requests.post(url, data=json.dumps(payload), headers=headers).json()
