@@ -487,7 +487,7 @@ def query_bitcoin():
             print(out['height'])
             out['hash'] = res['output']['result']
             print(out['hash'])
-            res = json_rpc('getblock', [out['hash']])
+            res = json_rpc('getblockheader', [out['hash']])
             out['time'] = res['output']['result']['time']
             print(out['time'])
             body = json.dumps(out)
