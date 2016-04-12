@@ -250,8 +250,10 @@ def query():
                         res.append(i.value)
             print(len(res))
                 
+    block_info = get_by_depth(12):
     body = json.dumps({"result": "success",
-                       string: res})
+                       string: res,
+                       "block_info": block_info})
     return (body, 200, {'Content-length': len(body),
                         'Content-type': 'application/json',
                        }
@@ -509,6 +511,21 @@ def query_bitcoin():
                         'Content-type': 'application/json',
                        }
            )
+
+def get_by_depth(depth):
+    res = json_rpc('getblockcount')
+    if 'output' in res and 'result' in res['output']:
+        height = res['output']['result'] - int(depth)
+    else:
+        return None
+    res = json_rpc('getblockhash', [height])
+    out['height'] = height
+    if 'output' in res and 'result' in res['output']:
+        out['hash'] = res['output']['result']
+        res = json_rpc('getblockheader', [out['hash']])
+        out['time'] = res['output']['result']['time']
+        out['height'] = height
+    return out
 
 def json_rpc(command, params=None):
     url = "http://%s:%s@%s:%s/" % (RPCUSER, RPCPASS, SERVER, RPCPORT)
