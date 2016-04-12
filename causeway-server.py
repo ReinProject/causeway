@@ -465,6 +465,14 @@ def info():
 
 @app.route('/bitcoin', methods=['GET', 'POST'])
 def query_bitcoin():
+    if not CORE_ENABLED:
+        body = json.dumps({"result": "error",
+                           "message": "Bitcoin Core not enabled for this server"})
+        return (body, 200, {'Content-length': len(body),
+                            'Content-type': 'application/json',
+                           }
+               )
+
     # to begin, get hash, block height, and time for latest, then n-blocks-ago, or for a block hash
     owner = request.args.get('owner')
     string = request.args.get('query')
