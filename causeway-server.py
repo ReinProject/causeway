@@ -250,7 +250,9 @@ def query():
                         res.append(i.value)
             print(len(res))
                 
-    block_info = get_by_depth(12)
+    block_info = None
+    if CORE_ENABLED:
+        block_info = get_by_depth(12)
     body = json.dumps({"result": "success",
                        string: res,
                        "block_info": block_info})
