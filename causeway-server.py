@@ -521,7 +521,7 @@ def get_by_depth(depth):
     else:
         return None
     res = json_rpc('getblockhash', [height])
-    out['height'] = height
+    out = {}
     if 'output' in res and 'result' in res['output']:
         out['hash'] = res['output']['result']
         res = json_rpc('getblockheader', [out['hash']])
