@@ -16,4 +16,4 @@ CORE_ENABLED = False
 SERVER = '127.0.0.1'
 RPCPORT = 8332
 RPCUSER = 'bitcoinrpc'
-RPCPASS = 'fill in with what core generates'
+RPCPASS = 'fill in with password from bitcoin.conf'

@@ -251,7 +251,7 @@ def query():
             print(len(res))
                 
     block_info = None
-    if CORE_ENABLED:
+    if core_enabled:
         block_info = get_by_depth(12)
     body = json.dumps({"result": "success",
                        string: res,
@@ -469,7 +469,7 @@ def info():
 
 @app.route('/bitcoin', methods=['GET', 'POST'])
 def query_bitcoin():
-    if not CORE_ENABLED:
+    if not core_enabled:
         body = json.dumps({"result": "error",
                            "message": "Bitcoin Core not enabled for this server"})
         return (body, 200, {'Content-length': len(body),
@@ -536,7 +536,7 @@ def json_rpc(command, params=None):
         params = []
     payload = {
         "method": command,
-	"params": params,
+	    "params": params,
         "jsonrpc": "2.0",
         "id": 0}
     out = requests.post(url, data=json.dumps(payload), headers=headers).json()
@@ -551,4 +551,13 @@ def json_rpc(command, params=None):
 if __name__ == '__main__':
     if DEBUG:
         app.debug = True
+
+    try:
+        json_rpc('getblockcount')
+        core_enabled = CORE_ENABLED
+    except:
+        core_enabled = False
+
+    print("Core enabled: " + str(core_enabled))
+
     app.run(host='0.0.0.0', port=SERVER_PORT)
