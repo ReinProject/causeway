@@ -487,6 +487,10 @@ def query_bitcoin():
     if sales == 0:
         body = json.dumps({"result": "error",
                            "message": "Account required to make queries"})
+        return (body, 200, {'Content-length': len(body),
+                            'Content-type': 'application/json',
+                           }
+               )
     elif string == 'getbydepth':
         depth = request.args.get('depth')
         res = json_rpc('getblockcount')
