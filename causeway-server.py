@@ -5,14 +5,19 @@ Causeway Server - key/value storage server geared toward small files with ECSDA 
 Usage:
     python3 causeway-server.py
 '''
-import os, json, random, time, string
-from settings import DATABASE, PRICE, DATA_DIR, SERVER_PORT, DEBUG
-
 from flask import Flask
 from flask import request
 from flask import abort, url_for
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy import and_
+
+from settings import DATABASE, PRICE, DATA_DIR, SERVER_PORT, DEBUG
+import os
+import json
+import random
+import time
+import string
+import requests
 
 #from two1.lib.wallet import Wallet
 #from two1.lib.bitserv.flask import Payment
@@ -245,8 +250,12 @@ def query():
                         res.append(i.value)
             print(len(res))
                 
+    block_info = None
+    if core_enabled:
+        block_info = get_by_depth(12)
     body = json.dumps({"result": "success",
-                       string: res})
+                       string: res,
+                       "block_info": block_info})
     return (body, 200, {'Content-length': len(body),
                         'Content-type': 'application/json',
                        }
@@ -458,7 +467,101 @@ def info():
 
     return json.dumps(links, indent=2)
 
+@app.route('/bitcoin', methods=['GET', 'POST'])
+def query_bitcoin():
+    if not core_enabled:
+        body = json.dumps({"result": "error",
+                           "message": "Bitcoin Core not enabled for this server"})
+        return (body, 200, {'Content-length': len(body),
+                            'Content-type': 'application/json',
+                           }
+               )
+
+    # to begin, get hash, block height, and time for latest, then n-blocks-ago, or for a block hash
+    owner = request.args.get('owner')
+    string = request.args.get('query')
+    
+    sales = db.session.query(Sale).filter(Sale.owner == owner).count()
+    res = []
+    out = {}
+    if sales == 0:
+        body = json.dumps({"result": "error",
+                           "message": "Account required to make queries"})
+        return (body, 200, {'Content-length': len(body),
+                            'Content-type': 'application/json',
+                           }
+               )
+    elif string == 'getbydepth':
+        depth = request.args.get('depth')
+        res = json_rpc('getblockcount')
+        if 'output' in res and 'result' in res['output']:
+            height = res['output']['result'] - int(depth)
+    elif string == 'getbyheight':
+        height = request.args.get('height')
+    elif string == 'getbyhash':
+        res = json_rpc('getblockheader', [request.args.get('hash')])
+        height = res['output']['result']['height']
+
+    res = json_rpc('getblockhash', [int(height)])
+    out['height'] = height
+    if 'output' in res and 'result' in res['output']:
+        out['hash'] = res['output']['result']
+        res = json_rpc('getblockheader', [str(out['hash'])])
+        out['time'] = res['output']['result']['time']
+        out['height'] = height
+        body = json.dumps(out)
+    else:
+        body = json.dumps({"result": "error",
+                           "message": "Invalid depth or RPC error"})
+    return (body, 200, {'Content-length': len(body),
+                        'Content-type': 'application/json',
+                       }
+           )
+
+def get_by_depth(depth):
+    res = json_rpc('getblockcount')
+    if 'output' in res and 'result' in res['output']:
+        height = res['output']['result'] - int(depth)
+    else:
+        return None
+    res = json_rpc('getblockhash', [height])
+    out = {}
+    if 'output' in res and 'result' in res['output']:
+        out['hash'] = res['output']['result']
+        res = json_rpc('getblockheader', [out['hash']])
+        out['time'] = res['output']['result']['time']
+        out['height'] = height
+    return out
+
+def json_rpc(command, params=None):
+    url = "http://%s:%s@%s:%s/" % (RPCUSER, RPCPASS, SERVER, RPCPORT)
+    headers = {'content-type': 'application/json'}
+    if params is None:
+        params = []
+    payload = {
+        "method": command,
+	    "params": params,
+        "jsonrpc": "2.0",
+        "id": 0}
+    out = requests.post(url, data=json.dumps(payload), headers=headers).json()
+
+    try:
+        res = json.loads(out)
+    except:
+        res = {"output": out}
+    res['result'] = 'success'
+    return res
+
 if __name__ == '__main__':
     if DEBUG:
         app.debug = True
+
+    try:
+        json_rpc('getblockcount')
+        core_enabled = CORE_ENABLED
+    except:
+        core_enabled = False
+
+    print("Core enabled: " + str(core_enabled))
+
     app.run(host='0.0.0.0', port=SERVER_PORT)
