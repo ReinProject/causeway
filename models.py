@@ -55,15 +55,19 @@ class Sale(db.Model):
     term = db.Column(db.Integer)        # term in days
     amount = db.Column(db.Integer)      # units purchased
     price = db.Column(db.Integer)       # satoshis paid per unit
+    paid = db.Column(db.Boolean)
+    payment_address = db.Column(db.String(64))
     bytes_used = db.Column(db.Integer)
 
     #s = Sale(owner, contact, 1, 30, PRICE)
-    def __init__(self, owner, contact, amount, term, price, id=None):
+    def __init__(self, owner, contact, amount, term, price, payment_address, id=None):
         self.owner = owner
         self.contact = contact
         self.amount = amount
         self.term = term
         self.price = price
+        self.paid = 0
+        self.payment_address = payment_address
         self.bytes_used = 0
         self.id = id
 
@@ -73,6 +77,10 @@ class Sale(db.Model):
         for s in sales:
             result.append({"id": s.id, "created":str(s.created), "bytes_free": str(1024*1024 - s.bytes_used)})
         return result
+
+    @classmethod
+    def get_unpaid(cls):
+        return cls.query.filter_by(paid=False).all()
 
     def __repr__(self):
         return '<Sale %r>' % self.id
