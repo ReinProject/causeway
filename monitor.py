@@ -64,14 +64,17 @@ class Daemon():
             #sleep(300)  # wait a bit on the long side for more reliability
 
     def get_transactions(self,number):
-        return rpc.get('listtransactions', ['*', int(number)])
+        return self.rpc.get('listtransactions', ['*', int(number)])
+
+    def get_accountaddress(self,account):
+        return self.rpc.get('getaccountaddress', [account])
 
     def get_receivedbyaddress(self,address,minconf):
-        res = rpc.get('getreceivedbyaddress', [address, int(minconf)])
+        res = self.rpc.get('getreceivedbyaddress', [address, int(minconf)])
         return Decimal(str(res['amount']))
 
     def get_balance(self,minconf):
-        res = rpc.get('getbalance', ['*', int(minconf)])
+        res = self.rpc.get('getbalance', ['*', int(minconf)])
         return Decimal(str(res))
 
     def send(self,address,amount):

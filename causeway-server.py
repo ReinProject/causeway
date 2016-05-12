@@ -24,10 +24,12 @@ import requests
 
 from rpc import RPC
 from bitcoinecdsa import sign, verify
+from monitor import Daemon
 from models import *
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + DATABASE
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 #wallet = Wallet()
 #payment = Payment(app, wallet)
@@ -125,14 +127,28 @@ def buy_hosting():
     # then a blocknotify script checks any of those addresses that were registered in the last 24hrs
     # against the new block
 
+    d = Daemon()
+    res = d.get_accountaddress(owner)
+    if 'result' in res and res['result'] == 'success':
+        address = res['output']['result']
+    else:
+        body = json.dumps({'result': 'error',
+                           'message': 'Error getting address. Contact server admin.'}, indent=2)
+        return (body, 500, {'Content-length': len(body),
+                            'Content-type': 'application/json',
+                           }
+               )
+
 
 
     # owner should now exist,  create sale record for address
-    s = Sale(owner, contact, 1, 30, PRICE)
+    s = Sale(owner, contact, 1, 30, PRICE, address)
     db.session.add(s)
     db.session.commit()
 
     body = json.dumps({'result': 'success',
+                       'address': address,
+                       'price': '0.0011',
                        'buckets': s.get_buckets()}, indent=2)
     return (body, 200, {'Content-length': len(body),
                         'Content-type': 'application/json',
@@ -486,7 +502,7 @@ def query_bitcoin():
                            }
                )
 
-    rpc = RPC(RPCUSER, RPCPASS, SERVER, RPCPORT))
+    rpc = RPC(RPCUSER, RPCPASS, SERVER, RPCPORT)
     # to begin, get hash, block height, and time for latest, then n-blocks-ago, or for a block hash
     owner = request.args.get('owner')
     string = request.args.get('query')
@@ -529,7 +545,7 @@ def query_bitcoin():
            )
 
 def get_by_depth(depth):
-    rpc = RPC(RPCUSER, RPCPASS, SERVER, RPCPORT))
+    rpc = RPC(RPCUSER, RPCPASS, SERVER, RPCPORT)
     res = rpc.get('getblockcount')
     if 'output' in res and 'result' in res['output']:
         height = res['output']['result'] - int(depth)
@@ -548,7 +564,7 @@ if __name__ == '__main__':
     if DEBUG:
         app.debug = True
 
-    rpc = RPC(RPCUSER, RPCPASS, SERVER, RPCPORT))
+    rpc = RPC(RPCUSER, RPCPASS, SERVER, RPCPORT)
     try:
         rpc.get('getblockcount')
         core_enabled = CORE_ENABLED
