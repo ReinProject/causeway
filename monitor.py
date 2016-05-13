@@ -71,7 +71,7 @@ class Daemon():
 
     def get_receivedbyaddress(self,address,minconf):
         res = self.rpc.get('getreceivedbyaddress', [address, int(minconf)])
-        return Decimal(str(res['amount']))
+        return Decimal(str(res['output']['result']))
 
     def get_balance(self,minconf):
         res = self.rpc.get('getbalance', ['*', int(minconf)])
@@ -90,12 +90,13 @@ class Sales :
     def enter_deposits(self):
         d = Daemon()
         unpaid = Sale.get_unpaid()
+        logger.debug(json.dumps({"action":"enter deposits"}))
 
         # get list of pending orders with amounts and addresses
         for order in unpaid:
             # get total out
-            total = Decimal(str(order.amount))
-            address = order.address
+            total = Decimal(str(order.price))
+            address = order.payment_address
             received = d.get_receivedbyaddress(address,MINCONF)
             logger.info(json.dumps({"action":"check received", "expected": str(total), "received": received, "address": address}))
             if( received >= total ):

@@ -28,6 +28,9 @@ CREATE TABLE sale (
     contact varchar(255),
     price integer,
     bytes_used integer,
+    payment_address varchar(64),
+    paid boolean,
+    received varchar(32),
     foreign key(owner) references owner(address)
 );
 CREATE TABLE log (
