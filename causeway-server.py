@@ -18,6 +18,7 @@ import random
 import time
 import string
 import requests
+from decimal import Decimal
 
 #from two1.lib.wallet import Wallet
 #from two1.lib.bitserv.flask import Payment
@@ -120,13 +121,6 @@ def buy_hosting():
         db.session.add(o)
         db.session.commit()
 
-    # return a payment address
-    # I rather like the check on each block instead of polling, so we create a script which is
-    # called on receipt of each block
-    # with each call here, we get a new address and save it with the owner's address
-    # then a blocknotify script checks any of those addresses that were registered in the last 24hrs
-    # against the new block
-
     d = Daemon()
     res = d.get_accountaddress(owner)
     if 'result' in res and res['result'] == 'success':
@@ -139,12 +133,27 @@ def buy_hosting():
                            }
                )
 
+    # check if sale record exists
+    # if recieved > 0, it will trigger bitcoin-cli to return a new address for this account
+    #   so create a new Sale record
+    # else we can just update thjis sale record's creation time, price, and receiving address
+    # the policy here is you must pay with a single payment, if you send a payment and request 
+    # a bucket, you will get a new address
+    sales = Sale.get(owner)
+    if len(sales) == 0:
+        s = Sale(owner, contact, 1, 30, PRICE, address)
+        db.session.add(s)
+        db.session.commit()
+    else:
+        for s in sales:
+            if s.price == 0 or Decimal(s.received) > 0.0:
+                continue
 
-
-    # owner should now exist,  create sale record for address
-    s = Sale(owner, contact, 1, 30, PRICE, address)
-    db.session.add(s)
-    db.session.commit()
+            s.created = db.func.current_timestamp()
+            s.price = PRICE
+            s.payment_address = address
+            db.session.commit()
+            break
 
     body = json.dumps({'result': 'success',
                        'address': address,
