@@ -22,7 +22,9 @@ import os
 import time
 import re
 import requests
-import simplejson as json
+import json
+import signal
+from requests.exceptions import ConnectionError
 from time import sleep
 from decimal import *
 from sqlalchemy import create_engine
@@ -108,43 +110,21 @@ class Sales :
                 order.paid = True
                 session.commit()
 
+
 if __name__ == "__main__":
-    logger.info("Started monitor script")
+    def signal_handler(signal, frame):
+        logger.info(json.dumps({"message": "exit"}))
+        sys.exit(0)
+    signal.signal(signal.SIGINT, signal_handler)
+
+    logger.info(json.dumps({"message": "start"}))
 
     d = Daemon()
     s = Sales()
     refreshcount = 0
     while(1):
         d.check()
-
         s.enter_deposits()
-
-        # move funds offline
-        #balance = d.get_balance(6)
-        #amount_to_send = balance - Decimal(str(FORWARDING_KEEP_LOCAL)) - Decimal(str(TRANSACTION_FEE))
-        #if( Decimal(str(FORWARDING_KEEP_LOCAL)) <= Decimal(str(FORWARDING_MINIMUM)) ) :
-        #    if( balance > Decimal(str(FORWARDING_MINIMUM)) and len(FORWARDING_ADDRESS) > 0) :
-        #        if( d.send(FORWARDING_ADDRESS,amount_to_send) ) :
-        #            logger.info("Forwarded " + str(amount_to_send) + " to address: " + FORWARDING_ADDRESS)
-        #else:
-        #    logger.warning("FORWARDING_KEEP_LOCAL is more than FORWARDING_MINIMUM so no funds will be sent")
-
-        # update exchange rate
-        #if( refreshcount % REFRESHES_TO_UPDATE_PRICE == 0 ) :
-        #        url = 'http://bitcoinexchangerate.org/price'
-        #        try:
-        #            answer = requests(url)
-        #            page_string = answer.text
-        #            x = re.search(r"\d+\.\d+",page_string)
-        #            if x:
-        #                btcusd_rate = Decimal(str(x.group()))
-        #                usdbtc_rate = Decimal(1) / btcusd_rate
-        #                c.execute("UPDATE currencies set value = %f where code = 'BTC'" % ( usdbtc_rate,))
-        #                logger.info("Updated (bitcoinexchangerate.org) USDBTC to " + str(usdbtc_rate) + " ( BTCUSD = " + str(btcusd_rate) + " )")
-        #                db.close()
-        #        except urllib2.URLError, e:
-        #            print(e.reason)
-
         refreshcount = refreshcount + 1
         REFRESH_PERIOD = 5
         sleep(REFRESH_PERIOD)
