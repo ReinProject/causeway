@@ -62,7 +62,7 @@ class Sale(db.Model):
     bytes_used = db.Column(db.Integer)
 
     #s = Sale(owner, contact, 1, 30, PRICE)
-    def __init__(self, owner, contact, amount, term, price, payment_address, id=None):
+    def __init__(self, owner, contact, amount, term, price, payment_address=None, id=None):
         self.owner = owner
         self.contact = contact
         self.amount = amount

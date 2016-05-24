@@ -55,13 +55,14 @@ class Daemon():
 
     def check(self):
         try:
-            rpc.get('getinfo')
+            self.rpc.get('getinfo')
         except:
-            #os.system("kill -9 `ps -ef | grep bitcoind | grep -v grep | awk '{print $2}'`")
-            #sleep(30)   # give bitcoind time to die
-            #os.system("bitcoind &")
-            logger.warning(json.dumps({'message': 'bitcoind not responding'}))
-            #sleep(300)  # wait a bit on the long side for more reliability
+            os.system("kill -9 `ps -ef | grep bitcoind | grep -v grep | awk '{print $2}'`")
+            logger.warning(json.dumps({'message': 'unresponsive bitcoind killed' }))
+            sleep(60)   # give bitcoind time to die
+            os.system("bitcoind &")
+            logger.warning(json.dumps({'message': 'bitcoind started' }))
+            sleep(300)  # wait a bit on the long side for more reliability
 
     def get_transactions(self,number):
         return self.rpc.get('listtransactions', ['*', int(number)])
@@ -71,7 +72,7 @@ class Daemon():
 
     def get_receivedbyaddress(self,address,minconf):
         res = self.rpc.get('getreceivedbyaddress', [address, int(minconf)])
-        return Decimal(str(res['output']['result']))
+        return res['output']['result']
 
     def get_balance(self,minconf):
         res = self.rpc.get('getbalance', ['*', int(minconf)])
@@ -94,6 +95,8 @@ class Sales :
 
         # get list of pending orders with amounts and addresses
         for order in unpaid:
+            if order.payment_address is None:
+                continue
             # get total out
             total = Decimal(str(order.price))
             address = order.payment_address
