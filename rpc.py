@@ -27,4 +27,4 @@ class RPC(object):
 if __name__ == '__main__':
     from settings import *
     rpc = RPC(RPCUSER, RPCPASS, SERVER, RPCPORT)
-    print rpc.get('getaccountaddress',['test'])
+    print(rpc.get('getaccountaddress',['test']))
