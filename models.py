@@ -57,7 +57,7 @@ class Sale(db.Model):
     created = db.Column(db.DateTime, default=db.func.current_timestamp())
     term = db.Column(db.Integer)        # term in days
     amount = db.Column(db.Integer)      # units purchased
-    price = db.Column(db.Integer)       # satoshis paid per unit
+    price = db.Column(db.String(32))       # btc paid per unit
     paid = db.Column(db.Boolean)
     payment_address = db.Column(db.String(64))
     received = db.Column(db.String(32))
