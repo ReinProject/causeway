@@ -18,15 +18,19 @@ import random
 import time
 import string
 import requests
+from decimal import Decimal
 
 #from two1.lib.wallet import Wallet
 #from two1.lib.bitserv.flask import Payment
 
+from rpc import RPC
 from bitcoinecdsa import sign, verify
+from monitor import Daemon
 from models import *
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + DATABASE
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 #wallet = Wallet()
 #payment = Payment(app, wallet)
@@ -102,33 +106,63 @@ def price():
                        }
            )
 
-#@app.route('/buy')
-#@payment.required(PRICE)
-#def buy_hosting():
-#    '''Registers one hosting bucket to account on paid request.'''
-#    # extract account address from client request
-#    owner = request.args.get('address')
-#    contact = request.args.get('contact')
-#
-#    # check if user exists
-#    o = db.session.query(Owner).get(owner)
-#    if o is None:
-#        # create them
-#        o = Owner(owner)
-#        db.session.add(o)
-#        db.session.commit()
-#
-#    # owner should now exist,  create sale record for address
-#    s = Sale(owner, contact, 1, 30, PRICE)
-#    db.session.add(s)
-#    db.session.commit()
-#
-#    body = json.dumps({'result': 'success', 
-#                       'buckets': s.get_buckets()}, indent=2)
-#    return (body, 200, {'Content-length': len(body),
-#                        'Content-type': 'application/json',
-#                       }
-#           )
+@app.route('/buy')
+def buy_hosting():
+    '''Registers one hosting bucket to account on paid request.'''
+    # extract account address from client request
+    owner = request.args.get('owner')
+    contact = request.args.get('contact')
+
+    # check if user exists
+    o = db.session.query(Owner).get(owner)
+    if o is None:
+        # create them
+        o = Owner(owner)
+        db.session.add(o)
+        db.session.commit()
+
+    d = Daemon()
+    res = d.get_accountaddress(owner)
+    if 'result' in res and res['result'] == 'success':
+        address = res['output']['result']
+    else:
+        body = json.dumps({'result': 'error',
+                           'message': 'Error getting address. Contact server admin.'}, indent=2)
+        return (body, 500, {'Content-length': len(body),
+                            'Content-type': 'application/json',
+                           }
+               )
+
+    # check if sale record exists
+    # if recieved > 0, it will trigger bitcoin-cli to return a new address for this account
+    #   so create a new Sale record
+    # else we can just update thjis sale record's creation time, price, and receiving address
+    # the policy here is you must pay with a single payment, if you send a payment and request 
+    # a bucket, you will get a new address
+    sales = Sale.get_recent(owner)
+    if len(sales) == 0:
+        s = Sale(owner, contact, 1, 30, PRICE, address)
+        db.session.add(s)
+        db.session.commit()
+    else:
+        for s in sales:
+            if s.price == 0 or Decimal(s.received) > 0.0:
+                continue
+
+            s.created = db.func.current_timestamp()
+            s.price = PRICE
+            s.payment_address = address
+            db.session.commit()
+            break
+
+    body = json.dumps({'result': 'success',
+                       'address': address,
+                       'price': '0.0011',
+                       'buckets': s.get_buckets()}, indent=2)
+    return (body, 200, {'Content-length': len(body),
+                        'Content-type': 'application/json',
+                       }
+           )
 
 @app.route('/request')
 def request_hosting():
@@ -477,6 +511,7 @@ def query_bitcoin():
                            }
                )
 
+    rpc = RPC(RPCUSER, RPCPASS, SERVER, RPCPORT)
     # to begin, get hash, block height, and time for latest, then n-blocks-ago, or for a block hash
     owner = request.args.get('owner')
     string = request.args.get('query')
@@ -493,20 +528,20 @@ def query_bitcoin():
                )
     elif string == 'getbydepth':
         depth = request.args.get('depth')
-        res = json_rpc('getblockcount')
+        res = rpc.get('getblockcount')
         if 'output' in res and 'result' in res['output']:
             height = res['output']['result'] - int(depth)
     elif string == 'getbyheight':
         height = request.args.get('height')
     elif string == 'getbyhash':
-        res = json_rpc('getblockheader', [request.args.get('hash')])
+        res = rpc.get('getblockheader', [request.args.get('hash')])
         height = res['output']['result']['height']
 
-    res = json_rpc('getblockhash', [int(height)])
+    res = rpc.get('getblockhash', [int(height)])
     out['height'] = height
     if 'output' in res and 'result' in res['output']:
         out['hash'] = res['output']['result']
-        res = json_rpc('getblockheader', [str(out['hash'])])
+        res = rpc.get('getblockheader', [str(out['hash'])])
         out['time'] = res['output']['result']['time']
         out['height'] = height
         body = json.dumps(out)
@@ -519,45 +554,28 @@ def query_bitcoin():
            )
 
 def get_by_depth(depth):
-    res = json_rpc('getblockcount')
+    rpc = RPC(RPCUSER, RPCPASS, SERVER, RPCPORT)
+    res = rpc.get('getblockcount')
     if 'output' in res and 'result' in res['output']:
         height = res['output']['result'] - int(depth)
     else:
         return None
-    res = json_rpc('getblockhash', [height])
+    res = rpc.get('getblockhash', [height])
     out = {}
     if 'output' in res and 'result' in res['output']:
         out['hash'] = res['output']['result']
-        res = json_rpc('getblockheader', [out['hash']])
+        res = rpc.get('getblockheader', [out['hash']])
         out['time'] = res['output']['result']['time']
         out['height'] = height
     return out
-
-def json_rpc(command, params=None):
-    url = "http://%s:%s@%s:%s/" % (RPCUSER, RPCPASS, SERVER, RPCPORT)
-    headers = {'content-type': 'application/json'}
-    if params is None:
-        params = []
-    payload = {
-        "method": command,
-	    "params": params,
-        "jsonrpc": "2.0",
-        "id": 0}
-    out = requests.post(url, data=json.dumps(payload), headers=headers).json()
-
-    try:
-        res = json.loads(out)
-    except:
-        res = {"output": out}
-    res['result'] = 'success'
-    return res
 
 if __name__ == '__main__':
     if DEBUG:
         app.debug = True
 
+    rpc = RPC(RPCUSER, RPCPASS, SERVER, RPCPORT)
     try:
-        json_rpc('getblockcount')
+        rpc.get('getblockcount')
         core_enabled = CORE_ENABLED
     except:
         core_enabled = False

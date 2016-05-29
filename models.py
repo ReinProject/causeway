@@ -3,8 +3,11 @@ from settings import *
 
 from flask import Flask
 from flask.ext.sqlalchemy import SQLAlchemy
+from datetime import datetime, timedelta
+
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + DATABASE
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 class Owner(db.Model):
@@ -54,16 +57,22 @@ class Sale(db.Model):
     created = db.Column(db.DateTime, default=db.func.current_timestamp())
     term = db.Column(db.Integer)        # term in days
     amount = db.Column(db.Integer)      # units purchased
-    price = db.Column(db.Integer)       # satoshis paid per unit
+    price = db.Column(db.String(32))       # btc paid per unit
+    paid = db.Column(db.Boolean)
+    payment_address = db.Column(db.String(64))
+    received = db.Column(db.String(32))
     bytes_used = db.Column(db.Integer)
 
     #s = Sale(owner, contact, 1, 30, PRICE)
-    def __init__(self, owner, contact, amount, term, price, id=None):
+    def __init__(self, owner, contact, amount, term, price, payment_address=None, id=None):
         self.owner = owner
         self.contact = contact
         self.amount = amount
         self.term = term
         self.price = price
+        self.paid = 0
+        self.payment_address = payment_address
+        self.received = '0.0'
         self.bytes_used = 0
         self.id = id
 
@@ -73,6 +82,20 @@ class Sale(db.Model):
         for s in sales:
             result.append({"id": s.id, "created":str(s.created), "bytes_free": str(1024*1024 - s.bytes_used)})
         return result
+
+    @classmethod
+    def get(cls, owner):
+        return Sale.query.filter(cls.owner==owner, cls.payment_address != None).all()
+
+    @staticmethod
+    def get_recent(owner):
+        return Sale.query.filter(Sale.owner==owner, Sale.payment_address != None,
+                                 Sale.created > datetime.now()-timedelta(days=1)).all()
+
+    @staticmethod
+    def get_unpaid():
+        return Sale.query.filter(Sale.paid == False,
+                                 Sale.created > datetime.now()-timedelta(days=1)).all()
 
     def __repr__(self):
         return '<Sale %r>' % self.id
