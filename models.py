@@ -3,6 +3,8 @@ from settings import *
 
 from flask import Flask
 from flask.ext.sqlalchemy import SQLAlchemy
+from datetime import datetime, timedelta
+
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + DATABASE
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -87,7 +89,8 @@ class Sale(db.Model):
 
     @classmethod
     def get_unpaid(cls):
-        return cls.query.filter_by(paid=False).all()
+        return cls.query.filter(cls.paid == False,
+                                cls.created+timedelta(days=1) > datetime.now()).all()
 
     def __repr__(self):
         return '<Sale %r>' % self.id
