@@ -1,3 +1,5 @@
 __pycache*
 *.sqlite3
+*.log
+*.db
 settings.py
