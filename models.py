@@ -87,10 +87,15 @@ class Sale(db.Model):
     def get(cls, owner):
         return Sale.query.filter(cls.owner==owner, cls.payment_address != None).all()
 
-    @classmethod
-    def get_unpaid(cls):
-        return cls.query.filter(cls.paid == False,
-                                cls.created+timedelta(days=1) > datetime.now()).all()
+    @staticmethod
+    def get_recent(owner):
+        return Sale.query.filter(Sale.owner==owner, Sale.payment_address != None,
+                                 Sale.created > datetime.now()-timedelta(days=1)).all()
+
+    @staticmethod
+    def get_unpaid():
+        return Sale.query.filter(Sale.paid == False,
+                                 Sale.created > datetime.now()-timedelta(days=1)).all()
 
     def __repr__(self):
         return '<Sale %r>' % self.id

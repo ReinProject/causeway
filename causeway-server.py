@@ -139,7 +139,7 @@ def buy_hosting():
     # else we can just update thjis sale record's creation time, price, and receiving address
     # the policy here is you must pay with a single payment, if you send a payment and request 
     # a bucket, you will get a new address
-    sales = Sale.get(owner)
+    sales = Sale.get_recent(owner)
     if len(sales) == 0:
         s = Sale(owner, contact, 1, 30, PRICE, address)
         db.session.add(s)
