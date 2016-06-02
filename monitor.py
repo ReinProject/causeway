@@ -126,5 +126,5 @@ if __name__ == "__main__":
         d.check()
         s.enter_deposits()
         refreshcount = refreshcount + 1
-        REFRESH_PERIOD = 5
+        REFRESH_PERIOD = 60
         sleep(REFRESH_PERIOD)
