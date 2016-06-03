@@ -92,7 +92,7 @@ class Sales :
 
     def enter_deposits(self):
         d = Daemon()
-        unpaid = Sale.get_unpaid()
+        unpaid = Sale.get_unpaid(session)
         logger.debug(json.dumps({"action":"enter deposits"}))
 
         # get list of pending orders with amounts and addresses
@@ -109,7 +109,7 @@ class Sales :
                 # do things when payment received - mark a bucket paid, send an email, etc.
                 order.paid = True
                 session.add(order)
-                session.commit()
+        session.commit()
 
 
 if __name__ == "__main__":
@@ -126,7 +126,6 @@ if __name__ == "__main__":
     while(1):
         d.check()
         s.enter_deposits()
-        session.rollback()
         refreshcount = refreshcount + 1
         REFRESH_PERIOD = 60
         sleep(REFRESH_PERIOD)
