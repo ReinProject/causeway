@@ -108,6 +108,7 @@ class Sales :
                 logger.info(json.dumps({"action":"payment complete", "order_id": str(order.id)}))
                 # do things when payment received - mark a bucket paid, send an email, etc.
                 order.paid = True
+                session.add(order)
                 session.commit()
 
 
@@ -125,6 +126,7 @@ if __name__ == "__main__":
     while(1):
         d.check()
         s.enter_deposits()
+        session.rollback()
         refreshcount = refreshcount + 1
         REFRESH_PERIOD = 60
         sleep(REFRESH_PERIOD)

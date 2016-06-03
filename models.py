@@ -94,7 +94,7 @@ class Sale(db.Model):
 
     @staticmethod
     def get_unpaid():
-        return Sale.query.filter(Sale.paid == False,
+        return Sale.query.filter(Sale.paid != 1,
                                  Sale.created > datetime.now()-timedelta(days=1)).all()
 
     def __repr__(self):
