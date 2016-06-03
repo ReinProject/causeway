@@ -90,7 +90,7 @@ class Sale(db.Model):
     @staticmethod
     def get_recent(owner):
         return Sale.query.filter(Sale.owner==owner, Sale.payment_address != None,
-                                 Sale.created > datetime.now()-timedelta(days=1)).all()
+                                 Sale.created > datetime.now()-timedelta(days=1), Sale.paid==0).all()
 
     @staticmethod
     def get_unpaid():
