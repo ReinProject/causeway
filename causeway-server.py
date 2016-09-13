@@ -261,7 +261,7 @@ def query():
         job_ids = request.args.get('job_ids')
         for job_id in job_ids.split(','):   
             q = Kv.query.filter(and_(Kv.testnet == testnet,
-                                     Kv.value.ilike('%Job ID: '+job_id+'%'))).paginate(1, 100, False)
+                                     Kv.value.ilike('%Job ID: '+job_id+'\n%'))).paginate(1, 100, False)
             items = q.items
             for i in items:
                 if i is not None:
@@ -271,13 +271,13 @@ def query():
         for job_id in job_ids.split(','):   
             last_len = len(res) 
             print(last_len)
-            q = Kv.query.filter(Kv.value.ilike('%Rein Delivery%'+job_id+'%')).paginate(1, 100, False)
+            q = Kv.query.filter(Kv.value.ilike('%Rein Delivery%'+job_id+'\n%')).paginate(1, 100, False)
             items = q.items
             for i in items:
                 if i is not None:
                     res.append(i.value)
             if len(res) == last_len: #we didn't find a delivery for this job id, look for an offer
-                q = Kv.query.filter(Kv.value.ilike('%Rein Offer%'+job_id+'%')).paginate(1, 100, False)
+                q = Kv.query.filter(Kv.value.ilike('%Rein Offer%'+job_id+'\n%')).paginate(1, 100, False)
                 items = q.items
                 for i in items:
                     if i is not None:
