@@ -114,6 +114,7 @@ def buy_hosting():
     delegate = request.args.get('delegate')
     contact = request.args.get('contact')
 
+
     # check if user exists
     o = db.session.query(Owner).get(owner)
     if o is None:
@@ -158,7 +159,7 @@ def buy_hosting():
 
     body = json.dumps({'result': 'success',
                        'address': address,
-                       'price': '0.0011',
+                       'price': str(PRICE),
                        'buckets': s.get_buckets()}, indent=2)
     return (body, 200, {'Content-length': len(body),
                         'Content-type': 'application/json',
