@@ -111,13 +111,14 @@ def buy_hosting():
     '''Registers one hosting bucket to account on paid request.'''
     # extract account address from client request
     owner = request.args.get('owner')
+    delegate = request.args.get('delegate')
     contact = request.args.get('contact')
 
     # check if user exists
     o = db.session.query(Owner).get(owner)
     if o is None:
         # create them
-        o = Owner(owner)
+        o = Owner(owner, delegate)
         db.session.add(o)
         db.session.commit()
 
