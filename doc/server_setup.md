@@ -37,6 +37,6 @@ Finally we run the server, under a screen session:
     screen
     su - cw
     cd causeway
-    python3 causeway-server.py
+    python3 cserver.py
 
 Now you can close the terminal window and the server will keep running on our server. Re-attach next time you login as root with screen -r.
