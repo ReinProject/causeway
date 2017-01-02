@@ -538,7 +538,14 @@ def query_bitcoin():
     elif string == 'getbyhash':
         res = rpc.get('getblockheader', [request.args.get('hash')])
         height = res['output']['result']['height']
-
+    elif string == 'sendrawtransaction':
+        tx = request.args.get('tx')
+        res = rpc.get('sendrawtransaction', [str(tx)])
+        if 'output' in res and 'result' in res['output']:
+            out['txid'] = res['output']['result']
+            body = json.dumps(out)
+            return (body, 200, {'Content-length': len(body), 'Content-type': 'application/json', })
+        
     res = rpc.get('getblockhash', [int(height)])
     out['height'] = height
     if 'output' in res and 'result' in res['output']:
