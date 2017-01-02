@@ -11,7 +11,7 @@ from flask import abort, url_for
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy import and_
 
-from settings import DATABASE, PRICE, DATA_DIR, SERVER_PORT, DEBUG
+from settings import DATABASE, PRICE, DATA_DIR, SERVER_PORT, DEBUG, TESTNET
 import os
 import json
 import random
@@ -27,6 +27,9 @@ from rpc import RPC
 from bitcoinecdsa import sign, verify
 from monitor import Daemon
 from models import *
+import bitcoin
+
+if (TESTNET): bitcoin.SelectParams('testnet')
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + DATABASE
