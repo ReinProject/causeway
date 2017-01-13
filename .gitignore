@@ -4,3 +4,4 @@ __pycache*
 *.db
 *.pyc
 settings.py
+venv/
