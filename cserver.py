@@ -217,7 +217,7 @@ def query():
     #check if owner has an active sale record or request
     sales = db.session.query(Sale).filter(Sale.owner == owner).count()
     res = []
-    if sales == 0 and string != 'ratings':
+    if sales == 0:
         body = json.dumps({"result": "error",
                           "message": "Account required to make queries"})
     elif string == 'mediators':
@@ -286,7 +286,6 @@ def query():
                         res.append(i.value)
             print(len(res))
     elif string == 'ratings':
-        print('ratings')
         q = Kv.query.filter(and_(Kv.testnet == testnet,
                                  Kv.value.like('%\nRein Rating%'))).paginate(1, 100, False)
         items = q.items
