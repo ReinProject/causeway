@@ -290,7 +290,7 @@ def query():
                                  Kv.value.like('%\nRein Rating%'))).paginate(1, 100, False)
         items = q.items
         for i in items:
-            res.append(i.value)
+            res.append({'key': i.key, 'value': i.value})
                 
     block_info = None
     if core_enabled:
