@@ -11,7 +11,7 @@ from flask import abort, url_for
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy import and_
 
-from settings import DATABASE, PRICE, DATA_DIR, SERVER_PORT, DEBUG
+from settings import DATABASE, PRICE, DATA_DIR, SERVER_PORT, DEBUG, TESTNET
 import os
 import json
 import random
@@ -27,6 +27,9 @@ from rpc import RPC
 from bitcoinecdsa import sign, verify
 from monitor import Daemon
 from models import *
+import bitcoin
+
+if (TESTNET): bitcoin.SelectParams('testnet')
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + DATABASE
@@ -554,7 +557,14 @@ def query_bitcoin():
     elif string == 'getbyhash':
         res = rpc.get('getblockheader', [request.args.get('hash')])
         height = res['output']['result']['height']
-
+    elif string == 'sendrawtransaction':
+        tx = request.args.get('tx')
+        res = rpc.get('sendrawtransaction', [str(tx)])
+        if 'output' in res and 'result' in res['output']:
+            out['txid'] = res['output']['result']
+            body = json.dumps(out)
+            return (body, 200, {'Content-length': len(body), 'Content-type': 'application/json', })
+        
     res = rpc.get('getblockhash', [int(height)])
     out['height'] = height
     if 'output' in res and 'result' in res['output']:
