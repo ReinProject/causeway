@@ -285,12 +285,18 @@ def query():
                     if i is not None:
                         res.append(i.value)
             print(len(res))
-    elif string == 'ratings':
-        q = Kv.query.filter(and_(Kv.testnet == testnet,
-                                 Kv.value.like('%\nRein Rating%'))).paginate(1, 100, False)
-        items = q.items
-        for i in items:
-            res.append({'key': i.key, 'value': i.value})
+    elif string == 'get_user_ratings':
+        msin = request.args.get('msin')
+
+        if not msin:
+            res.append('error')
+
+        else:
+            q = Kv.query.filter(and_(Kv.testnet == testnet,
+                                     Kv.value.like('%\nRein Rating%'))).filter(Kv.value.like('%\nUser msin: {}%'.format(msin))).paginate(1, 100, False)
+            items = q.items
+            for i in items:
+                res.append({'key': i.key, 'value': i.value})
                 
     block_info = None
     if core_enabled:
@@ -359,7 +365,11 @@ def put():
             if kv is None:
                 kv = Kv(k, v, o, sale_id, testnet)
                 db.session.add(kv)
-                db.session.commit()
+                try:
+                    db.session.commit()
+                except Exception as ex:
+                    for _ in range(10):
+                        print(ex.message)
             else:
                 kv.value = v
                 db.session.commit()
@@ -590,5 +600,5 @@ if __name__ == '__main__':
 
     print("Core enabled: " + str(core_enabled))
 
-    app.run(host='0.0.0.0', port=SERVER_PORT)
-    #app.run(host='127.0.0.1', port=SERVER_PORT)
+    #app.run(host='0.0.0.0', port=SERVER_PORT)
+    app.run(host='127.0.0.1', port=SERVER_PORT)
