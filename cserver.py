@@ -300,6 +300,19 @@ def query():
             items = q.items
             for i in items:
                 res.append({'key': i.key, 'value': i.value})
+
+    elif string == 'get_user_name':
+        msin = request.args.get('msin')
+
+        if not msin:
+            res.append('error')
+
+        else:
+            q = Kv.query.filter(and_(Kv.testnet == testnet,
+                                     Kv.value.like('%\nRein User Enrollment%'))).filter(Kv.value.like('%\nSecure Identity Number: {}%'.format(msin))).paginate(1, 100, False)
+            items = q.items
+            for i in items:
+                res.append({'key': i.key, 'value': i.value})
                 
     block_info = None
     if core_enabled:
