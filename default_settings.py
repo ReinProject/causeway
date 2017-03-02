@@ -20,3 +20,5 @@ RPCPASS = 'fill in with password from bitcoin.conf'
 
 # Minimum number of confirmations to consider a payment good 
 MINCONF = 1
+
+Testnet = False
