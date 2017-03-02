@@ -2,7 +2,7 @@
 
 SERVER_PORT = 2016
  
-DATABASE = '/home/cw/causeway/causeway.db'
+DATABASE_URI = 'sqlite:////home/cw/causeway/causeway.db'
 
 DEBUG = False
 
@@ -17,7 +17,7 @@ SERVER = '127.0.0.1'
 RPCPORT = 8332
 RPCUSER = 'bitcoinrpc'
 RPCPASS = 'fill in with password from bitcoin.conf'
-TESTNET = 'False'
+TESTNET = False
 
 # Minimum number of confirmations to consider a payment good 
 MINCONF = 1

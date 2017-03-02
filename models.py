@@ -6,7 +6,7 @@ from flask.ext.sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + DATABASE
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
