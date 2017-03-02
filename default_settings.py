@@ -17,6 +17,7 @@ SERVER = '127.0.0.1'
 RPCPORT = 8332
 RPCUSER = 'bitcoinrpc'
 RPCPASS = 'fill in with password from bitcoin.conf'
+TESTNET = 'False'
 
 # Minimum number of confirmations to consider a payment good 
 MINCONF = 1
