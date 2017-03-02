@@ -600,5 +600,5 @@ if __name__ == '__main__':
 
     print("Core enabled: " + str(core_enabled))
 
-    app.run(host='0.0.0.0', port=SERVER_PORT)
+    app.run(host='0.0.0.0', port=(os.environ.get('SERVER_PORT', SERVER_PORT)))
     #app.run(host='127.0.0.1', port=SERVER_PORT)
