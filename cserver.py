@@ -11,7 +11,7 @@ from flask import abort, url_for
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy import and_
 
-from settings import DATABASE, PRICE, DATA_DIR, SERVER_PORT, DEBUG, TESTNET
+from settings import DATABASE_URI, PRICE, DATA_DIR, SERVER_PORT, DEBUG, TESTNET
 import os
 import json
 import random
@@ -32,7 +32,7 @@ import bitcoin
 if (TESTNET): bitcoin.SelectParams('testnet')
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + DATABASE
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 #wallet = Wallet()
@@ -619,5 +619,5 @@ if __name__ == '__main__':
 
     print("Core enabled: " + str(core_enabled))
 
-    app.run(host='0.0.0.0', port=SERVER_PORT)
+    app.run(host='0.0.0.0', port=(os.environ.get('SERVER_PORT', SERVER_PORT)))
     #app.run(host='127.0.0.1', port=SERVER_PORT)
