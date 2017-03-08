@@ -223,6 +223,10 @@ def query():
     if sales == 0:
         body = json.dumps({"result": "error",
                           "message": "Account required to make queries"})
+        return (body, 200, {'Content-length': len(body),
+                        'Content-type': 'application/json',
+                       }
+               )
     elif string == 'mediators':
         mediator_query = Kv.query.filter(and_(Kv.testnet == testnet,
                                               Kv.value.ilike('%\nWilling to mediate: True%'))).paginate(1, 100, False)
