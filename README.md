@@ -24,6 +24,14 @@ Run once built
 docker start reinproject-server
 ```
 
+## Run via docker-compose (postgres container will be run also)
+
+```script
+        docker-compose build --no-cache
+        docker-compose up
+```
+**NOTE** --no-cache could be omitted if no changes in source tree where happen
+o
 ## REST API
 
 * All requests via HTTP GET except where noted.
