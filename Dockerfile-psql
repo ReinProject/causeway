@@ -1,0 +1,17 @@
+FROM ubuntu:latest
+
+MAINTAINER Arsen A. Gutsal <a.gutsal@softsky.com.ua>
+
+RUN apt update && apt upgrade -y && apt install git python3-pip postgresql-client -y
+RUN pip3 install --upgrade pip
+
+ENV WD /app/causeway
+WORKDIR ${WD}
+ADD . $WD
+RUN pip3 install -r requirements.txt
+
+EXPOSE 8332 2016
+COPY default_settings.py settings.py
+
+ENV DATABASE_URI "postgresql://localhost/causeway"
+ENTRYPOINT ["sh", "docker-entrypoint.sh"]
