@@ -36,7 +36,7 @@ from settings import *
 from rpc import RPC
 
 # connect to db
-engine = create_engine("sqlite:///" + DATABASE )
+engine = create_engine(DATABASE_URI)
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
 

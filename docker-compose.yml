@@ -1,0 +1,13 @@
+version: '2'
+services:
+    server:
+       build: .
+       ports:
+        - "2016:2016"
+        - "8332:8332"
+       links:
+        - postgres
+    postgres:
+       image: postgres
+       ports:
+        - "5432:5432"

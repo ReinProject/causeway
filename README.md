@@ -8,6 +8,22 @@ Stores kv pairs and verifies signatures and authentication via ECDSA.
 
 See [server_setup.md](doc/server_setup.md)
 
+## Run via Docker
+
+Building and initial run
+
+```script
+git clone git@github.com:ReinProject/causeway.git
+cd causeway
+docker build --tag reinproject/causeway . 
+docker run -p 8332:8332 -p 2016:2016 --name reinproject-server reinproject/causeway
+```
+Run once built
+
+```script
+docker start reinproject-server
+```
+
 ## REST API
 
 * All requests via HTTP GET except where noted.
