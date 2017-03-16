@@ -317,6 +317,38 @@ def query():
             items = q.items
             for i in items:
                 res.append({'key': i.key, 'value': i.value})
+
+    elif string == 'get_user':
+      search_input = request.args.get('search_input')
+
+      if not search_input:
+        res.append('error')
+
+      else:
+        all_enrollments = Kv.query.filter(and_(
+          Kv.testnet == testnet,
+          Kv.value.like('%\nRein User Enrollment%')
+        ))
+
+        # Check for SIN matches
+        q = all_enrollments.filter(
+          Kv.value.like('%\nSecure Identity Number: {}%'.format(search_input))
+        ).paginate(1, 20, False)
+
+        # If unsuccessful, check for master address matches
+        if not q.items:
+          q = all_enrollments.filter(
+            Kv.value.like('%\nMaster signing address: {}%'.format(search_input))
+          ).paginate(1, 20, False)
+
+        # If unsuccessful, ceheck for delegate address matches
+        if not q.items:
+          q = all_enrollments.filter(
+            Kv.value.like('%\nDelegate signing address: {}%'.format(search_input))
+          ).paginate(1, 20, False)
+
+        for enrollment in q.items:
+          res.append(enrollment.value)
                 
     block_info = None
     if core_enabled:
