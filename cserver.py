@@ -341,10 +341,22 @@ def query():
             Kv.value.like('%\nMaster signing address: {}%'.format(search_input))
           ).paginate(1, 20, False)
 
-        # If unsuccessful, ceheck for delegate address matches
+        # If unsuccessful, check for delegate address matches
         if not q.items:
           q = all_enrollments.filter(
             Kv.value.like('%\nDelegate signing address: {}%'.format(search_input))
+          ).paginate(1, 20, False)
+
+        # If unsuccessful, check for username, case-insensitive, accepts partial matches
+        if not q.items:
+          q = all_enrollments.filter(
+            Kv.value.ilike('%\nUser: %{}%'.format(search_input))
+          ).paginate(1, 20, False)
+
+        # If unsuccessful, check for contact, case-insensitive, accepts partial matches
+        if not q.items:
+          q = all_enrollments.filter(
+            Kv.value.ilike('%\nContact: %{}%'.format(search_input))
           ).paginate(1, 20, False)
 
         for enrollment in q.items:
