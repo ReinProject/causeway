@@ -293,8 +293,9 @@ def query():
                         res.append(i.value)
             print(len(res))
     elif string == 'get_user_ratings':
-        msin = request.args.get('msin')
+      """DEPRECATED SINCE PYTHON-REIN COMMIT 'Use local database for ratings data...'"""
 
+        msin = request.args.get('msin')
         if not msin:
             res.append('error')
 
