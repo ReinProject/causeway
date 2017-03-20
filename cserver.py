@@ -293,14 +293,31 @@ def query():
                         res.append(i.value)
             print(len(res))
     elif string == 'get_user_ratings':
-        msin = request.args.get('msin')
+        dest = None
+        source = None
+        try:
+            dest = request.args.get('dest')
 
-        if not msin:
+        except: pass
+
+        try:
+            source = request.args.get('source')
+
+        except: pass
+
+        if not dest and not source:
             res.append('error')
 
         else:
             q = Kv.query.filter(and_(Kv.testnet == testnet,
-                                     Kv.value.like('%\nRein Rating%'))).filter(Kv.value.like('%\nUser msin: {}%'.format(msin))).paginate(1, 100, False)
+                                     Kv.value.like('%\nRein Rating%')))
+            if dest:
+                q = q.filter(Kv.value.like('%\nUser msin: {}%'.format(dest)))
+
+            if source:
+                q = q.filter(Kv.value.like('%\nRater msin: {}%'.format(source)))
+
+            q = q.paginate(1, 100, False)
             items = q.items
             for i in items:
                 res.append({'key': i.key, 'value': i.value})
@@ -317,6 +334,50 @@ def query():
             items = q.items
             for i in items:
                 res.append({'key': i.key, 'value': i.value})
+
+    elif string == 'get_user':
+      search_input = request.args.get('search_input')
+
+      if not search_input:
+        res.append('error')
+
+      else:
+        all_enrollments = Kv.query.filter(and_(
+          Kv.testnet == testnet,
+          Kv.value.like('%\nRein User Enrollment%')
+        ))
+
+        # Check for SIN matches
+        q = all_enrollments.filter(
+          Kv.value.like('%\nSecure Identity Number: {}%'.format(search_input))
+        ).paginate(1, 20, False)
+
+        # If unsuccessful, check for master address matches
+        if not q.items:
+          q = all_enrollments.filter(
+            Kv.value.like('%\nMaster signing address: {}%'.format(search_input))
+          ).paginate(1, 20, False)
+
+        # If unsuccessful, check for delegate address matches
+        if not q.items:
+          q = all_enrollments.filter(
+            Kv.value.like('%\nDelegate signing address: {}%'.format(search_input))
+          ).paginate(1, 20, False)
+
+        # If unsuccessful, check for username, case-insensitive, accepts partial matches
+        if not q.items:
+          q = all_enrollments.filter(
+            Kv.value.ilike('%\nUser: %{}%'.format(search_input))
+          ).paginate(1, 20, False)
+
+        # If unsuccessful, check for contact, case-insensitive, accepts partial matches
+        if not q.items:
+          q = all_enrollments.filter(
+            Kv.value.ilike('%\nContact: %{}%'.format(search_input))
+          ).paginate(1, 20, False)
+
+        for enrollment in q.items:
+          res.append(enrollment.value)
                 
     block_info = None
     if core_enabled:
