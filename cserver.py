@@ -10,7 +10,7 @@ from flask import Flask
 from flask import request
 from flask import abort, url_for
 from flask.ext.sqlalchemy import SQLAlchemy
-from sqlalchemy import and_
+from sqlalchemy import and_, or_
 
 from settings import DATABASE_URI, PRICE, DATA_DIR, SERVER_PORT, DEBUG, TESTNET
 import os
@@ -231,40 +231,46 @@ def query():
                )
     elif string == 'mediators':
         mediator_query = Kv.query.filter(and_(Kv.testnet == testnet,
-                                              Kv.value.ilike('%"Willing to mediate": "True"%'))).paginate(1, 100, False)
+                                              or_(Kv.value.ilike('%"Willing to mediate": "True"%'),
+                                                  Kv.value.ilike('%\nWilling to mediate: True%')))).paginate(1, 100, False)
         mediators = mediator_query.items
         for m in mediators:
             res.append(m.value)
     elif string == 'jobs':
         q = Kv.query.filter(and_(Kv.testnet == testnet,
-                                 Kv.value.like('%"Rein Job"%'))).paginate(1, 100, False)
+                                 or_(Kv.value.like('%"Rein Job"%'),
+                                     Kv.value.like('%\nRein Job%')))).paginate(1, 100, False)
         items = q.items
         for i in items:
             res.append(i.value)
     elif string == 'bids':
         q = Kv.query.filter(and_(Kv.testnet == testnet,
-                                 Kv.value.like('%"Rein Bid"%'))).paginate(1, 100, False)
+                                 or_(Kv.value.like('%"Rein Bid"%'),
+                                     Kv.value.like('%\nRein Bid%')))).paginate(1, 100, False)
         items = q.items
         for i in items:
             res.append(i.value)
     elif string == 'deliveries':
         job_creator = request.args.get('job_creator')
         q = Kv.query.filter(and_(Kv.testnet == testnet,
-                                 Kv.value.ilike('%"Job creator public key": "'+job_creator+'"%"Rein Delivery"%'))).paginate(1, 100, False)
+                                 or_(Kv.value.ilike('%"Job creator public key": "'+job_creator+'"%"Rein Delivery"%'),
+                                     Kv.value.ilike('%Rein Delivery%Job creator public key: '+job_creator+'%')))).paginate(1, 100, False)
         items = q.items
         for i in items:
             res.append(i.value)
     elif string == 'in-process':
         worker = request.args.get('worker')
         q = Kv.query.filter(and_(Kv.testnet == testnet,
-                                 Kv.value.ilike('%"Worker public key": "'+worker+'"%'))).paginate(1, 100, False)
+                                 or_(Kv.value.ilike('%"Worker public key": "'+worker+'"%'),
+                                     Kv.value.ilike('%Worker public key: '+worker+'%')))).paginate(1, 100, False)
         items = q.items
         for i in items:
             res.append(i.value)
     elif string == 'review':
         mediator = request.args.get('mediator')
         q = Kv.query.filter(and_(Kv.testnet == testnet,
-                                 Kv.value.ilike('%"Mediator public key": "'+mediator+'"%'))).paginate(1, 100, False)
+                                 or_(Kv.value.ilike('%"Mediator public key": "'+mediator+'"%'),
+                                     Kv.value.ilike('%Mediator public key: '+mediator+'%')))).paginate(1, 100, False)
         items = q.items
         for i in items:
             res.append(i.value)
@@ -272,7 +278,8 @@ def query():
         job_ids = request.args.get('job_ids')
         for job_id in job_ids.split(','):   
             q = Kv.query.filter(and_(Kv.testnet == testnet,
-                                     Kv.value.ilike('%"Job ID": "'+job_id+'"%'))).paginate(1, 100, False)
+                                     or_(Kv.value.ilike('%"Job ID": "'+job_id+'"%'),
+                                         Kv.value.ilike('%Job ID: '+job_id+'\n%')))).paginate(1, 100, False)
             items = q.items
             for i in items:
                 if i is not None:
@@ -282,13 +289,15 @@ def query():
         for job_id in job_ids.split(','):   
             last_len = len(res) 
             print(last_len)
-            q = Kv.query.filter(Kv.value.ilike('%: "'+job_id+'%"Rein Delivery"%')).paginate(1, 100, False)
+            q = Kv.query.filter(_or(Kv.value.ilike('%: "'+job_id+'%"Rein Delivery"%'),
+                                    Kv.value.ilike('%Rein Delivery%'+job_id+'\n%'))).paginate(1, 100, False)
             items = q.items
             for i in items:
                 if i is not None:
                     res.append(i.value)
             if len(res) == last_len: #we didn't find a delivery for this job id, look for an offer
-                q = Kv.query.filter(Kv.value.ilike('%: "'+job_id+'%"Rein Offer"%')).paginate(1, 100, False)
+                q = Kv.query.filter(or_(Kv.value.ilike('%: "'+job_id+'%"Rein Offer"%'),
+                Kv.value.ilike('%Rein Offer%'+job_id+'\n%'))).paginate(1, 100, False)
                 items = q.items
                 for i in items:
                     if i is not None:
@@ -312,12 +321,15 @@ def query():
 
         else:
             q = Kv.query.filter(and_(Kv.testnet == testnet,
-                                     Kv.value.like('%"Rein Rating"%')))
+                                     or_(Kv.value.like('%"Rein Rating"%'),
+                                         Kv.value.like('%\nRein Rating%'))))
             if dest:
-                q = q.filter(Kv.value.like('%"User msin": "{}"%'.format(dest)))
+                q = q.filter(or_(Kv.value.like('%"User msin": "{}"%'.format(dest)),
+                                 Kv.value.like('%\nUser msin: {}%'.format(dest))))
 
             if source:
-                q = q.filter(Kv.value.like('%"Rater msin": "{}"%'.format(source)))
+                q = q.filter(or_(Kv.value.like('%"Rater msin": "{}"%'.format(source)),
+                                 Kv.value.like('%\nRater msin: {}%'.format(source))))
 
             q = q.paginate(1, 100, False)
             items = q.items
@@ -332,7 +344,9 @@ def query():
 
         else:
             q = Kv.query.filter(and_(Kv.testnet == testnet,
-                                     Kv.value.like('%"Rein User Enrollment"%'))).filter(Kv.value.like('%"Secure Identity Number": "{}"%'.format(msin))).paginate(1, 100, False)
+                                     or_(Kv.value.like('%"Rein User Enrollment"%'),
+                                         Kv.value.like('%\nRein User Enrollment%')))).filter(or_(Kv.value.like('%"Secure Identity Number": "{}"%'.format(msin)),
+                                                                                                 Kv.value.like('%\nSecure Identity Number: {}%'.format(msin)))).paginate(1, 100, False)
             items = q.items
             for i in items:
                 res.append({'key': i.key, 'value': i.value})
@@ -346,36 +360,42 @@ def query():
       else:
         all_enrollments = Kv.query.filter(and_(
           Kv.testnet == testnet,
-          Kv.value.like('%"Rein User Enrollment"%')
+          or_(Kv.value.like('%"Rein User Enrollment"%'),
+              Kv.value.like('%\nRein User Enrollment%'))
         ))
 
         # Check for SIN matches
         q = all_enrollments.filter(
-          Kv.value.like('%"Secure Identity Number": "{}"%'.format(search_input))
+            or_(Kv.value.like('%"Secure Identity Number": "{}"%'.format(search_input)),
+                Kv.value.like('%\nSecure Identity Number: {}%'.format(search_input)))
         ).paginate(1, 20, False)
 
         # If unsuccessful, check for master address matches
         if not q.items:
           q = all_enrollments.filter(
-            Kv.value.like('%"Master signing address": "{}"%'.format(search_input))
+              or_(Kv.value.like('%"Master signing address": "{}"%'.format(search_input)),
+                  Kv.value.like('%\nMaster signing address: {}%'.format(search_input)))
           ).paginate(1, 20, False)
 
         # If unsuccessful, check for delegate address matches
         if not q.items:
           q = all_enrollments.filter(
-            Kv.value.like('%"Delegate signing address": "{}"%'.format(search_input))
+            or_(Kv.value.like('%"Delegate signing address": "{}"%'.format(search_input)),
+                Kv.value.like('%\nDelegate signing address: {}%'.format(search_input)))
           ).paginate(1, 20, False)
 
         # If unsuccessful, check for username, case-insensitive, accepts partial matches
         if not q.items:
           q = all_enrollments.filter(
-            Kv.value.ilike('%"User": %"{}"%'.format(search_input))
+            or_(Kv.value.ilike('%"User": %"{}"%'.format(search_input)),
+                Kv.value.ilike('%\nUser: %{}%'.format(search_input)))
           ).paginate(1, 20, False)
 
         # If unsuccessful, check for contact, case-insensitive, accepts partial matches
         if not q.items:
           q = all_enrollments.filter(
-            Kv.value.ilike('%"Contact": %"{}"%'.format(search_input))
+            or_(Kv.value.ilike('%"Contact": %"{}"%'.format(search_input)),
+                Kv.value.ilike('%\nContact: %{}%'.format(search_input)))
           ).paginate(1, 20, False)
 
         for enrollment in q.items:
