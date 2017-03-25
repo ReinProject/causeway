@@ -21,5 +21,3 @@ TESTNET = False
 
 # Minimum number of confirmations to consider a payment good 
 MINCONF = 1
-
-Testnet = False
