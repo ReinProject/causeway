@@ -1,7 +1,9 @@
 version: '2'
 services:
     server:
-       build: .
+       build:
+        context: .
+        dockerfile: Dockerfile-psql
        ports:
         - "2016:2016"
         - "8332:8332"
