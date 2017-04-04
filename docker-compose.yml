@@ -8,8 +8,8 @@ services:
         - "2016:2016"
         - "8332:8332"
        links:
-        - postgres
-    postgres:
+        - db
+    db:
        image: postgres
        ports:
         - "5432:5432"
